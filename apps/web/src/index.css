@@ -1,0 +1,51 @@
+:root {
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  color: #f7f4ed;
+  background: #141820;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+.landing-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top, rgba(229, 164, 67, 0.18), transparent 44%),
+    #141820;
+}
+
+.hero {
+  max-width: 720px;
+  padding: clamp(40px, 8vw, 72px);
+  text-align: center;
+  border: 1px solid rgba(229, 164, 67, 0.24);
+  border-radius: 20px;
+  background: rgba(25, 30, 40, 0.8);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(32px, 6vw, 52px);
+  line-height: 1.2;
+}
+
+.description {
+  margin: 24px 0 0;
+  color: #c5cad5;
+  font-size: clamp(16px, 3vw, 20px);
+  line-height: 1.7;
+}

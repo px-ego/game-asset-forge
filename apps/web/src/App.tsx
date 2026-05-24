@@ -16,6 +16,11 @@ import {
   type GenerateFormState,
   type Theme,
 } from "./types";
+import {
+  buildMetadata,
+  buildMetadataFileName,
+  downloadMetadata,
+} from "./utils/exportMetadata";
 import { generateAssets } from "./utils/generateAssets";
 
 const initialFormState: GenerateFormState = {
@@ -31,6 +36,7 @@ function App() {
   const [submittedState, setSubmittedState] = useState<GenerateFormState | null>(null);
   const [generatedAssets, setGeneratedAssets] = useState<GeneratedAsset[]>([]);
   const [validationMessage, setValidationMessage] = useState("");
+  const [metadataError, setMetadataError] = useState("");
 
   const handleAssetTypeChange = (assetType: AssetType, checked: boolean) => {
     setFormState((currentState) => ({
@@ -40,6 +46,7 @@ function App() {
         : currentState.assetTypes.filter((item) => item !== assetType),
     }));
     setValidationMessage("");
+    setMetadataError("");
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -49,12 +56,29 @@ function App() {
       setValidationMessage("请至少选择一种素材类型");
       setSubmittedState(null);
       setGeneratedAssets([]);
+      setMetadataError("");
       return;
     }
 
     setValidationMessage("");
+    setMetadataError("");
     setSubmittedState(formState);
     setGeneratedAssets(generateAssets(formState));
+  };
+
+  const handleMetadataDownload = () => {
+    if (!submittedState || generatedAssets.length === 0) {
+      return;
+    }
+
+    setMetadataError("");
+
+    try {
+      const metadata = buildMetadata(submittedState, generatedAssets);
+      downloadMetadata(metadata, buildMetadataFileName(metadata));
+    } catch {
+      setMetadataError("metadata.json 导出失败，请重试");
+    }
   };
 
   return (
@@ -191,9 +215,23 @@ function App() {
       {generatedAssets.length > 0 && (
         <section className="preview-panel" aria-labelledby="preview-title">
           <div className="preview-header">
-            <h2 id="preview-title">素材预览</h2>
-            <p>{`共生成 ${generatedAssets.length} 个本地预览素材`}</p>
+            <div>
+              <h2 id="preview-title">素材预览</h2>
+              <p>{`共生成 ${generatedAssets.length} 个本地预览素材`}</p>
+            </div>
+            <button
+              className="metadata-button"
+              onClick={handleMetadataDownload}
+              type="button"
+            >
+              下载 metadata.json
+            </button>
           </div>
+          {metadataError && (
+            <p className="metadata-error" role="alert">
+              {metadataError}
+            </p>
+          )}
           <div className="asset-grid">
             {generatedAssets.map((asset) => (
               <AssetCard asset={asset} key={asset.id} />

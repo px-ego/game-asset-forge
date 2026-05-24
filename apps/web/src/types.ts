@@ -20,3 +20,24 @@ export interface GeneratedAsset {
   size: AssetSize;
   seed: number;
 }
+
+export interface MetadataAsset {
+  id: string;
+  type: AssetType;
+  name: string;
+  theme: Theme;
+  style: AssetStyle;
+  size: AssetSize;
+  seed: number;
+  fileName: string;
+}
+
+export interface ExportMetadata {
+  project: "GameAssetForge";
+  projectName: "游素工坊";
+  version: "0.1.0";
+  createdAt: string;
+  request: GenerateFormState;
+  total: number;
+  assets: MetadataAsset[];
+}

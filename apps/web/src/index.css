@@ -84,6 +84,13 @@ h1 {
   line-height: 1.6;
 }
 
+.preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
 .asset-form {
   margin-top: 28px;
 }
@@ -115,6 +122,7 @@ h1 {
 .field select:focus,
 .generate-button:focus-visible,
 .download-button:focus-visible,
+.metadata-button:focus-visible,
 .checkbox input:focus-visible {
   outline: 2px solid #e5a443;
   outline-offset: 2px;
@@ -275,7 +283,37 @@ h1 {
   line-height: 1.5;
 }
 
+.metadata-button {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 9px;
+  color: #151922;
+  background: #e5a443;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.metadata-button:hover {
+  background: #f0b85f;
+}
+
+.metadata-error {
+  margin: 18px 0 0;
+  color: #ffbc73;
+  line-height: 1.5;
+}
+
 @media (max-width: 620px) {
+  .preview-header {
+    flex-direction: column;
+  }
+
+  .metadata-button {
+    width: 100%;
+  }
+
   .select-grid,
   .checkbox-grid {
     grid-template-columns: 1fr;

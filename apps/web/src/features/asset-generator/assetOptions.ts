@@ -4,7 +4,7 @@ import {
   type AssetStyle,
   type AssetType,
   type Theme,
-} from "./types";
+} from "../../types/asset";
 
 interface SelectOption<T> {
   value: T;

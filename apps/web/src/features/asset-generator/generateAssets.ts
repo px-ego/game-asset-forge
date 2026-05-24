@@ -1,4 +1,4 @@
-import { type GeneratedAsset, type GenerateFormState } from "../types";
+import { type GeneratedAsset, type GenerateFormState } from "../../types/asset";
 
 function createSeed(source: string): number {
   let hash = 0;

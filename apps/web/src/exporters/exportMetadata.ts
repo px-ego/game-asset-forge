@@ -1,9 +1,9 @@
-import { assetTypeLabels } from "../assetOptions";
+import { assetTypeLabels } from "../features/asset-generator/assetOptions";
 import {
   type ExportMetadata,
   type GeneratedAsset,
   type GenerateFormState,
-} from "../types";
+} from "../types/asset";
 
 function buildAssetPngFileName(asset: GeneratedAsset): string {
   return `gameasset_${asset.type}_${asset.theme}_${asset.style}_${asset.size}_${asset.seed}.png`;

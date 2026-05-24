@@ -1,6 +1,10 @@
 import { forwardRef } from "react";
-import { assetTypeLabels } from "../assetOptions";
-import { type AssetStyle, type GeneratedAsset, type Theme } from "../types";
+import { assetTypeLabels } from "../features/asset-generator/assetOptions";
+import {
+  type AssetStyle,
+  type GeneratedAsset,
+  type Theme,
+} from "../types/asset";
 
 interface AssetPreviewProps {
   asset: GeneratedAsset;

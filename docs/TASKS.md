@@ -9,7 +9,10 @@
 | PR3 | 本地规则 SVG 素材预览与素材卡片 | 已完成 |
 | PR4 | 单素材 PNG 下载 | 已完成 |
 | PR5 | `metadata.json` 导出 | 已完成 |
-| PR6 | MVP 使用说明与验收文档收口 | 本次完成 |
+| PR6 | MVP 使用说明与验收文档收口 | 已完成 |
+| PR7 | ZIP 资源包导出 | 已完成 |
+| PR8 | Sprite Sheet 导出 | 已完成 |
+| PR9 | 前端模块边界重构 | 本次完成 |
 
 ## 当前 MVP 已交付范围
 
@@ -18,14 +21,14 @@
 - 三种主题与两种风格。
 - 单素材 PNG 下载。
 - 本次生成任务的 `metadata.json` 下载。
+- 当前结果的 ZIP 资源包下载。
+- 当前结果的 Sprite Sheet 下载。
 - 后端 `GET /health` 健康检查。
 
 ## 后续增强任务
 
 以下事项不属于当前 MVP 已实现范围：
 
-- ZIP 资源包导出。
-- Sprite Sheet 导出。
 - LLM Planner：将自然语言需求转换为 `AssetSpec`。
 - LangChain Tool Calling。
 - MCP Server。

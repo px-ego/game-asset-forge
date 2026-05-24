@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import { type GeneratedAsset, type GenerateFormState } from "../types";
+import { type GeneratedAsset, type GenerateFormState } from "../types/asset";
 import { buildMetadata } from "./exportMetadata";
 import { svgElementToPngBlob } from "./exportPng";
 

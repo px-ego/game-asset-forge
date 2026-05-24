@@ -124,6 +124,7 @@ h1 {
 .download-button:focus-visible,
 .metadata-button:focus-visible,
 .zip-button:focus-visible,
+.sprite-sheet-button:focus-visible,
 .checkbox input:focus-visible {
   outline: 2px solid #e5a443;
   outline-offset: 2px;
@@ -292,7 +293,8 @@ h1 {
 }
 
 .metadata-button,
-.zip-button {
+.zip-button,
+.sprite-sheet-button {
   flex-shrink: 0;
   padding: 12px 16px;
   border: 0;
@@ -305,17 +307,20 @@ h1 {
 }
 
 .metadata-button:hover,
-.zip-button:hover:not(:disabled) {
+.zip-button:hover:not(:disabled),
+.sprite-sheet-button:hover:not(:disabled) {
   background: #f0b85f;
 }
 
-.zip-button:disabled {
+.zip-button:disabled,
+.sprite-sheet-button:disabled {
   cursor: wait;
   opacity: 0.65;
 }
 
 .metadata-error,
-.zip-error {
+.zip-error,
+.sprite-sheet-error {
   margin: 18px 0 0;
   color: #ffbc73;
   line-height: 1.5;
@@ -328,7 +333,8 @@ h1 {
 
   .preview-actions,
   .metadata-button,
-  .zip-button {
+  .zip-button,
+  .sprite-sheet-button {
     width: 100%;
   }
 

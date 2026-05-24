@@ -1,4 +1,4 @@
-import { type GeneratedAsset, type GenerateFormState } from "../types";
+import { type GeneratedAsset, type GenerateFormState } from "../types/asset";
 import { svgElementToPngBlob } from "./exportPng";
 
 const maxColumns = 4;

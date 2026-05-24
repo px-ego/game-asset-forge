@@ -1,7 +1,11 @@
 import { useCallback, useRef, useState } from "react";
-import { assetTypeLabels, styleLabels, themeLabels } from "../assetOptions";
-import { type GeneratedAsset } from "../types";
-import { exportSvgToPng } from "../utils/exportPng";
+import {
+  assetTypeLabels,
+  styleLabels,
+  themeLabels,
+} from "../features/asset-generator/assetOptions";
+import { type GeneratedAsset } from "../types/asset";
+import { exportSvgToPng } from "../exporters/exportPng";
 import { AssetPreview } from "./AssetPreview";
 
 interface AssetCardProps {

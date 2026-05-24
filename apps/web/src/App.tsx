@@ -5,7 +5,7 @@ import {
   sizeOptions,
   styleOptions,
   themeOptions,
-} from "./assetOptions";
+} from "./features/asset-generator/assetOptions";
 import { AssetCard } from "./components/AssetCard";
 import {
   type AssetCount,
@@ -15,15 +15,15 @@ import {
   type GeneratedAsset,
   type GenerateFormState,
   type Theme,
-} from "./types";
+} from "./types/asset";
 import {
   buildMetadata,
   buildMetadataFileName,
   downloadMetadata,
-} from "./utils/exportMetadata";
-import { exportSpriteSheet } from "./utils/exportSpriteSheet";
-import { exportAssetsZip } from "./utils/exportZip";
-import { generateAssets } from "./utils/generateAssets";
+} from "./exporters/exportMetadata";
+import { exportSpriteSheet } from "./exporters/exportSpriteSheet";
+import { exportAssetsZip } from "./exporters/exportZip";
+import { generateAssets } from "./features/asset-generator/generateAssets";
 
 const initialFormState: GenerateFormState = {
   theme: "forest",

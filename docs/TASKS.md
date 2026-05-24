@@ -1,16 +1,31 @@
 # 任务清单
 
-## PR1：项目骨架与 SDD 文档
+## MVP PR 进度
 
-- [x] 保留并遵循 `SPEC.md` v1.0。
-- [x] 建立 React + TypeScript + Vite 前端骨架。
-- [x] 建立 FastAPI 后端骨架与 `GET /health`。
-- [x] 编写中文 README、架构说明与 PR1 验收标准。
-- [x] 保留 `renderer`、`schema` 与 `examples` 目录供后续实现。
+| PR | 范围 | 状态 |
+| --- | --- | --- |
+| PR1 | 项目骨架、FastAPI 健康检查与初始 SDD 文档 | 已完成 |
+| PR2 | 前端参数表单与参数 JSON 展示 | 已完成 |
+| PR3 | 本地规则 SVG 素材预览与素材卡片 | 已完成 |
+| PR4 | 单素材 PNG 下载 | 已完成 |
+| PR5 | `metadata.json` 导出 | 已完成 |
+| PR6 | MVP 使用说明与验收文档收口 | 本次完成 |
 
-## 不属于 PR1 的任务
+## 当前 MVP 已交付范围
 
-- 参数表单与 AssetSpec 数据结构。
-- 本地规则 Renderer 与五类素材生成。
-- 素材预览、PNG 导出和 `metadata.json` 导出。
-- LLM、LangChain、MCP 及其他 AI/Agent 增强能力。
+- 参数选择：主题、风格、素材类型、尺寸、数量。
+- 本地规则 SVG 预览：药水、金币、史莱姆、剑、地砖。
+- 三种主题与两种风格。
+- 单素材 PNG 下载。
+- 本次生成任务的 `metadata.json` 下载。
+- 后端 `GET /health` 健康检查。
+
+## 后续增强任务
+
+以下事项不属于当前 MVP 已实现范围：
+
+- ZIP 资源包导出。
+- Sprite Sheet 导出。
+- LLM Planner：将自然语言需求转换为 `AssetSpec`。
+- LangChain Tool Calling。
+- MCP Server。

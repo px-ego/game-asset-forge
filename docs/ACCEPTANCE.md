@@ -1,16 +1,77 @@
-# PR1 验收标准
+# MVP 验收说明
 
-## 前端
+## 验收状态
 
-- `apps/web` 使用 React、TypeScript 和 Vite 初始化。
-- 前端可启动并显示标题“游素工坊 GameAssetForge”。
-- 前端可显示说明“面向 2D 游戏开发流程的 AI 辅助素材生成工具”。
-- 页面不包含参数表单、生成器、预览或导出功能。
+| SPEC 验收项 | 当前状态 | 验收要点 |
+| --- | --- | --- |
+| README 中的启动命令可运行 | 已满足 | 按本文与 README 的 PowerShell 命令启动 |
+| 前端页面可打开 | 已满足 | 显示标题、介绍和参数面板 |
+| 参数选择 | 已满足 | 支持主题、风格、类型、尺寸、数量 |
+| 五类素材预览 | 已满足 | 支持药水、金币、史莱姆、剑、地砖 |
+| 主题与风格变化 | 已满足 | 支持三种主题、两种风格 |
+| 单素材 PNG 导出 | 已满足 | 卡片提供“下载 PNG”按钮 |
+| `metadata.json` 导出 | 已满足 | 预览区域提供下载按钮 |
+| 不依赖外部 LLM API 演示核心流程 | 已满足 | 素材生成与导出在前端本地执行 |
+| 后续 AI/Agent 路线说明 | 已满足 | 见 `PROMPTING.md` 与 README |
 
-## 后端
+## 启动前端
 
-- `apps/api` 使用 FastAPI 初始化。
-- 在 Windows PowerShell 中可按照以下命令启动服务：
+在 Windows PowerShell 中执行：
+
+```powershell
+cd apps/web
+npm.cmd install
+npm.cmd run dev
+```
+
+可另外验证生产构建：
+
+```powershell
+cd apps/web
+npm.cmd run build
+```
+
+## 手动验收步骤
+
+### 1. 页面与表单
+
+1. 打开 Vite 提示的页面地址。
+2. 确认页面显示“游素工坊 GameAssetForge”与项目简介。
+3. 确认可选择游戏主题、素材风格、素材类型、素材尺寸和生成数量。
+4. 在不选择素材类型时点击“生成素材”，确认提示“请至少选择一种素材类型”，且未出现导出按钮。
+
+### 2. 五类预览与数量
+
+1. 同时选择药水、金币、史莱姆、剑和地砖。
+2. 点击“生成素材”，确认五种 SVG 预览均可辨识。
+3. 将数量改为 `4`，选择两种素材后重新生成。
+4. 确认页面显示 `8` 张素材卡片，并在卡片中显示类型、主题、风格、尺寸和 `seed`。
+
+### 3. 主题与风格
+
+1. 分别选择森林、地牢、赛博朋克主题并重新生成。
+2. 确认预览配色分别体现绿色/棕色、灰色/紫色、蓝色/紫色与亮色点缀。
+3. 分别选择像素风与卡通风并重新生成。
+4. 确认预览表现分别呈现硬边块状和较圆润轮廓。
+
+### 4. PNG 导出
+
+1. 生成任意素材。
+2. 点击卡片中的“下载 PNG”。
+3. 确认文件名包含 `type`、`theme`、`style`、`size`、`seed`。
+4. 分别使用 `32`、`64`、`128` 尺寸导出，确认 PNG 图片尺寸与选择一致。
+
+### 5. Metadata 导出
+
+1. 选择至少一种素材并点击“生成素材”。
+2. 确认预览区域显示“下载 metadata.json”。
+3. 下载并打开 JSON 文件，确认包含 `project`、`projectName`、`version`、`createdAt`、`request`、`total`、`assets`。
+4. 确认 `total` 与页面卡片数量一致。
+5. 确认每个 asset 包含 `id`、`type`、`name`、`theme`、`style`、`size`、`seed`、`fileName`，且 `fileName` 对应单素材 PNG 命名规则。
+
+## 后端健康检查
+
+后端不是前端核心演示链路的依赖。如需验收后端骨架，在 Windows PowerShell 中执行：
 
 ```powershell
 cd apps/api
@@ -19,8 +80,7 @@ py -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
 ```
 
-- 服务启动后，访问 `http://127.0.0.1:8000/health` 应返回 HTTP 200。
-- 预期响应体严格为：
+访问 `http://127.0.0.1:8000/health`，预期返回：
 
 ```json
 {
@@ -29,8 +89,6 @@ py -m venv .venv
 }
 ```
 
-## 文档与范围
+## 未实现范围
 
-- `README.md` 包含项目简介、MVP 范围、技术栈、目录结构、启动方式、SDD 流程和 PR 规范。
-- `SPEC.md` v1.0 作为最高优先级需求文档保留。
-- 项目未引入 LLM、LangChain、MCP、Stable Diffusion、数据库、用户登录、云部署和多 Agent。
+当前项目未实现 LLM、LangChain、MCP、Stable Diffusion、数据库、用户登录、云部署、多 Agent、ZIP 资源包、Sprite Sheet 或批量 PNG 下载。

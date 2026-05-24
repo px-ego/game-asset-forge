@@ -1,6 +1,6 @@
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 
 
 Theme = Literal["forest", "dungeon", "cyberpunk"]
@@ -21,20 +21,9 @@ class AssetPlan(BaseModel):
     size: AssetSize
     count: AssetCount
 
-    @field_validator("assetTypes")
-    @classmethod
-    def validate_asset_types(cls, value: List[AssetType]) -> List[AssetType]:
-        if not value:
-            raise ValueError("素材类型至少包含一项")
-
-        if len(value) != len(set(value)):
-            raise ValueError("素材类型不能重复")
-
-        return value
-
 
 class PlanResponse(BaseModel):
     success: bool
-    source: Literal["fallback", "llm"] = "fallback"
+    source: Literal["fallback"] = "fallback"
     plan: Optional[AssetPlan] = None
     message: str

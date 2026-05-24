@@ -4,7 +4,7 @@
 
 游素工坊 GameAssetForge 是面向 2D 游戏开发流程的 AI 辅助素材生成工具。项目采用 SDD（规格驱动开发）方式推进，以 [docs/SPEC.md](docs/SPEC.md) 中的 SPEC v1.0 为最高优先级需求依据。
 
-本地素材 Renderer 不依赖 LLM，也不调用外部图像生成 API；系统通过前端 SVG 规则生成可预览、可导出的 2D 素材。当前增强阶段提供可选的阿里百炼 LLM Planner，仅用于把需求规划为结构化参数。
+MVP 阶段不依赖 LLM，也不调用外部图像生成 API；系统通过前端本地 SVG 规则生成可预览、可导出的 2D 素材，便于在 72 小时工程实践中稳定演示和交付。
 
 ## 当前已完成功能
 
@@ -18,17 +18,17 @@
 - ZIP 资源包导出，包含当前所有 PNG 与 `metadata.json`。
 - Sprite Sheet PNG 导出，将当前素材按网格合成单张图片。
 - FastAPI 健康检查接口：`GET /health`。
-- Planner API：`POST /api/plan`，可选使用百炼 Qwen 规划中文需求，并在未配置或调用失败时自动 fallback。
-- AI 需求规划面板：输入中文需求后调用后端 Planner 自动填充参数表单，再由用户手动生成素材。
+- Fallback Planner API：`POST /api/plan`，通过本地规则将中文需求解析为结构化 `AssetPlan`。
+- AI 需求规划面板：输入中文需求后调用 fallback planner 自动填充参数表单，再由用户手动生成素材。
 
 ## 范围边界
 
-当前核心素材生成与导出流程可以在前端本地演示。仅在 `LLM_ENABLED=true` 且本地提供 `DASHSCOPE_API_KEY` 时，Planner API 会尝试调用阿里百炼；否则自动使用 fallback。未启动后端时，用户仍可手动选择参数并完成素材生成与导出。项目目前没有接入 LangChain、MCP、Function Calling、Tool Calling、数据库、用户登录、云部署或多 Agent 系统。
+当前 MVP 的核心素材生成与导出流程可以在前端本地演示。AI 需求规划面板调用的是后端 fallback 规则解析，不调用真实 LLM；未启动后端时，用户仍可手动选择参数并完成素材生成与导出。项目目前没有接入 LLM、LangChain、MCP、Stable Diffusion、数据库、用户登录、云部署或多 Agent 系统，也未提供批量 PNG 单独下载。
 
 ## 技术栈
 
 - 前端：React + TypeScript + Vite，含 AI 需求规划面板与响应校验
-- 后端：Python + FastAPI + Pydantic + OpenAI Python SDK，可选百炼 Planner 与 fallback
+- 后端：Python + FastAPI + Pydantic，本地 fallback planner API
 - 素材渲染：浏览器端 SVG 本地规则生成
 - 导出：浏览器端单素材 PNG、`metadata.json`、ZIP 资源包与 Sprite Sheet
 - 默认语言：README、文档与页面 UI 中文优先，代码变量名使用英文
@@ -39,7 +39,7 @@
 game-asset-forge/
   apps/
     web/                  # 参数规划面板、表单、SVG 预览与本地导出
-    api/                  # FastAPI 健康检查、可选百炼 Planner 与 fallback API
+    api/                  # FastAPI 健康检查与 fallback planner API
   packages/
     renderer/             # 预留目录，当前前端规则渲染未迁移至此
     schema/               # 预留目录
@@ -80,29 +80,13 @@ npm.cmd run build
 
 ## 后端启动方式
 
-后端提供健康检查与 Planner API。默认不需要 API Key，直接使用 fallback；如需启用百炼，请仅在本地环境配置密钥。
+后端当前提供健康检查接口与无需 API Key 的 fallback planner API。在 Windows PowerShell 中执行：
 
 ```powershell
 cd apps/api
 py -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
-```
-
-可选百炼配置：
-
-```powershell
-cd apps/api
-Copy-Item .env.example .env
-```
-
-编辑本地 `.env`，将 `LLM_ENABLED` 设为 `true`，并将自己的百炼密钥填写到 `DASHSCOPE_API_KEY`。`.env` 已被 Git 忽略，不得提交。
-
-```dotenv
-LLM_ENABLED=true
-DASHSCOPE_API_KEY=<仅填写在本地的百炼 API Key>
-DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-DASHSCOPE_MODEL=qwen-plus
 ```
 
 验证方式：访问 `http://127.0.0.1:8000/health`。
@@ -130,7 +114,7 @@ Invoke-RestMethod `
   -Body $body
 ```
 
-默认未启用 LLM 时，预期返回结构：
+预期返回结构：
 
 ```json
 {
@@ -149,11 +133,9 @@ Invoke-RestMethod `
 
 发送空 `prompt` 时也会返回默认可用方案：森林、像素风、金币、`64` 尺寸、数量 `4`。
 
-启用百炼且调用成功时，响应中的 `source` 为 `"llm"`；配置缺失、调用失败、JSON 无效或计划校验失败时，接口会自动返回 `source="fallback"` 的可用计划。
-
 ## 使用流程
 
-1. 可选：启动后端，在「AI 需求规划」面板输入自然语言需求并点击“使用 AI 规划参数”，由百炼 Planner 或 fallback planner 填充表单。
+1. 可选：启动后端，在「AI 需求规划」面板输入自然语言需求并点击“使用 AI 规划参数”，由 fallback planner 填充表单。
 2. 检查并可继续手动修改主题、风格、素材类型、尺寸和生成数量。
 3. 点击“生成素材”查看 SVG 预览卡片；规划成功后不会自动生成。
 4. 在单张卡片中点击“下载 PNG”，或在预览区域下载 `metadata.json`、ZIP 资源包与 Sprite Sheet。
@@ -171,10 +153,9 @@ Invoke-RestMethod `
 7. ZIP 导出：生成素材后下载 ZIP，确认包含 `assets/` 下的 PNG 与根目录 `metadata.json`，且文件数量与卡片一致。
 8. Sprite Sheet 导出：生成素材后下载 Sprite Sheet，确认所有卡片按生成顺序合成到一张 PNG 中。
 9. 后端健康检查：如需核验后端骨架，启动 API 后访问 `/health` 并确认响应内容。
-10. Fallback Planner：不配置密钥或设置 `LLM_ENABLED=false`，向 `/api/plan` 提交自然语言示例，确认返回 `source=fallback` 的结构化 `AssetPlan`。
-11. 可选 LLM Planner：在本地配置有效百炼密钥并启用开关，提交需求后确认返回 `source=llm` 且计划符合允许值域。
-12. 前端规划面板：输入示例并点击“使用 AI 规划参数”，确认表单自动填入响应计划，且尚未自动生成卡片。
-13. 降级使用：停止后端后点击规划按钮，确认页面提示“AI 规划服务不可用，请手动选择参数”，并仍可手动生成素材。
+10. Fallback Planner：向 `/api/plan` 提交自然语言示例，确认返回 `source=fallback` 的结构化 `AssetPlan`；该步骤不依赖 API Key。
+11. 前端规划面板：输入相同示例并点击“使用 AI 规划参数”，确认表单自动填为地牢、像素风、金币/药水/史莱姆、`64`、`4`，且尚未自动生成卡片。
+12. 降级使用：停止后端后点击规划按钮，确认页面提示“AI 规划服务不可用，请手动选择参数”，并仍可手动生成素材。
 
 更完整的逐项记录见 [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)。
 
@@ -182,13 +163,13 @@ Invoke-RestMethod `
 
 1. 展示项目目录与前端启动过程。
 2. 打开页面，说明项目面向 2D 游戏开发流程，MVP 使用本地规则生成。
-3. 在 AI 需求规划面板输入中文需求，展示 Planner 自动填表，并说明未配置密钥时自动使用 fallback、配置后可选百炼规划。
+3. 在 AI 需求规划面板输入中文需求，展示 fallback planner 自动填表，并说明未调用真实 LLM。
 4. 手动确认或调整主题、风格、类型、尺寸和数量后，一次生成五类素材，展示 SVG 卡片预览。
 5. 切换主题与风格，展示预览变化。
 6. 下载一张 PNG，并展示导出文件。
 7. 下载 `metadata.json`，展示结构化结果与素材列表数量一致。
 8. 展示 ZIP 资源包与 Sprite Sheet 下载。
-9. 简述当前 LLM 仅作为 Planner、本地 Renderer 负责绘制，并说明 LangChain、Tool Calling 与 MCP 尚未实现。
+9. 简述当前仅接入 fallback planner，未来可加入真实 LLM Planner、Structured Output、Function Calling、LangChain 与 MCP。
 
 ## SDD 开发流程说明
 
@@ -198,8 +179,7 @@ Invoke-RestMethod `
 4. PR9 仅整理前端模块边界，为后续 Planner 扩展预留清晰接入点，不改变功能行为。
 5. PR10 增加后端 fallback planner API，先固定结构化规划契约与无密钥演示路径，不接入真实 LLM。
 6. PR11 增加前端 AI 需求规划面板，将 fallback 计划写回参数表单，仍由用户手动触发生成。
-7. PR12 增加可选百炼 LLM Planner，以 JSON 对象响应和 Pydantic 校验保护 `AssetPlan`，任一失败自动 fallback。
-8. 未来增强能力必须在当前本地 MVP 保持可运行的前提下独立推进。
+7. 未来增强能力必须在当前本地 MVP 保持可运行的前提下独立推进。
 
 ## PR 规范
 

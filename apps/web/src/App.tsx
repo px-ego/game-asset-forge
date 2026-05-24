@@ -1,45 +1,22 @@
 import { type FormEvent, useState } from "react";
-
-type Theme = "forest" | "dungeon" | "cyberpunk";
-type Style = "pixel" | "cartoon";
-type AssetType = "potion" | "coin" | "slime" | "sword" | "tile";
-type AssetSize = 32 | 64 | 128;
-type AssetCount = 1 | 4 | 8;
-
-interface GenerateFormState {
-  theme: Theme;
-  style: Style;
-  assetTypes: AssetType[];
-  size: AssetSize;
-  count: AssetCount;
-}
-
-interface SelectOption<T> {
-  value: T;
-  label: string;
-}
-
-const themeOptions: SelectOption<Theme>[] = [
-  { value: "forest", label: "森林" },
-  { value: "dungeon", label: "地牢" },
-  { value: "cyberpunk", label: "赛博朋克" },
-];
-
-const styleOptions: SelectOption<Style>[] = [
-  { value: "pixel", label: "像素风" },
-  { value: "cartoon", label: "卡通风" },
-];
-
-const assetTypeOptions: SelectOption<AssetType>[] = [
-  { value: "potion", label: "药水" },
-  { value: "coin", label: "金币" },
-  { value: "slime", label: "史莱姆" },
-  { value: "sword", label: "剑" },
-  { value: "tile", label: "地砖" },
-];
-
-const sizeOptions: AssetSize[] = [32, 64, 128];
-const countOptions: AssetCount[] = [1, 4, 8];
+import {
+  assetTypeOptions,
+  countOptions,
+  sizeOptions,
+  styleOptions,
+  themeOptions,
+} from "./assetOptions";
+import { AssetCard } from "./components/AssetCard";
+import {
+  type AssetCount,
+  type AssetSize,
+  type AssetStyle,
+  type AssetType,
+  type GeneratedAsset,
+  type GenerateFormState,
+  type Theme,
+} from "./types";
+import { generateAssets } from "./utils/generateAssets";
 
 const initialFormState: GenerateFormState = {
   theme: "forest",
@@ -52,6 +29,7 @@ const initialFormState: GenerateFormState = {
 function App() {
   const [formState, setFormState] = useState<GenerateFormState>(initialFormState);
   const [submittedState, setSubmittedState] = useState<GenerateFormState | null>(null);
+  const [generatedAssets, setGeneratedAssets] = useState<GeneratedAsset[]>([]);
   const [validationMessage, setValidationMessage] = useState("");
 
   const handleAssetTypeChange = (assetType: AssetType, checked: boolean) => {
@@ -70,11 +48,13 @@ function App() {
     if (formState.assetTypes.length === 0) {
       setValidationMessage("请至少选择一种素材类型");
       setSubmittedState(null);
+      setGeneratedAssets([]);
       return;
     }
 
     setValidationMessage("");
     setSubmittedState(formState);
+    setGeneratedAssets(generateAssets(formState));
   };
 
   return (
@@ -120,7 +100,7 @@ function App() {
                 onChange={(event) =>
                   setFormState((currentState) => ({
                     ...currentState,
-                    style: event.target.value as Style,
+                    style: event.target.value as AssetStyle,
                   }))
                 }
               >
@@ -205,6 +185,20 @@ function App() {
         <section className="result-panel" aria-labelledby="result-title">
           <h2 id="result-title">当前参数 JSON</h2>
           <pre>{JSON.stringify(submittedState, null, 2)}</pre>
+        </section>
+      )}
+
+      {generatedAssets.length > 0 && (
+        <section className="preview-panel" aria-labelledby="preview-title">
+          <div className="preview-header">
+            <h2 id="preview-title">素材预览</h2>
+            <p>{`共生成 ${generatedAssets.length} 个本地预览素材`}</p>
+          </div>
+          <div className="asset-grid">
+            {generatedAssets.map((asset) => (
+              <AssetCard asset={asset} key={asset.id} />
+            ))}
+          </div>
         </section>
       )}
     </main>

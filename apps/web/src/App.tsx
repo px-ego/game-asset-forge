@@ -21,6 +21,7 @@ import {
   buildMetadataFileName,
   downloadMetadata,
 } from "./utils/exportMetadata";
+import { exportSpriteSheet } from "./utils/exportSpriteSheet";
 import { exportAssetsZip } from "./utils/exportZip";
 import { generateAssets } from "./utils/generateAssets";
 
@@ -40,6 +41,8 @@ function App() {
   const [metadataError, setMetadataError] = useState("");
   const [zipError, setZipError] = useState("");
   const [isZipExporting, setIsZipExporting] = useState(false);
+  const [spriteSheetError, setSpriteSheetError] = useState("");
+  const [isSpriteSheetExporting, setIsSpriteSheetExporting] = useState(false);
   const previewElementsRef = useRef<Map<string, SVGSVGElement>>(new Map());
 
   const handleAssetTypeChange = (assetType: AssetType, checked: boolean) => {
@@ -52,6 +55,7 @@ function App() {
     setValidationMessage("");
     setMetadataError("");
     setZipError("");
+    setSpriteSheetError("");
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -63,12 +67,14 @@ function App() {
       setGeneratedAssets([]);
       setMetadataError("");
       setZipError("");
+      setSpriteSheetError("");
       return;
     }
 
     setValidationMessage("");
     setMetadataError("");
     setZipError("");
+    setSpriteSheetError("");
     setSubmittedState(formState);
     setGeneratedAssets(generateAssets(formState));
   };
@@ -118,6 +124,27 @@ function App() {
       setZipError("ZIP 导出失败，请重试。");
     } finally {
       setIsZipExporting(false);
+    }
+  };
+
+  const handleSpriteSheetDownload = async () => {
+    if (!submittedState || generatedAssets.length === 0) {
+      return;
+    }
+
+    setIsSpriteSheetExporting(true);
+    setSpriteSheetError("");
+
+    try {
+      await exportSpriteSheet({
+        formState: submittedState,
+        assets: generatedAssets,
+        svgElements: previewElementsRef.current,
+      });
+    } catch {
+      setSpriteSheetError("Sprite Sheet 导出失败，请重试。");
+    } finally {
+      setIsSpriteSheetExporting(false);
     }
   };
 
@@ -275,6 +302,14 @@ function App() {
               >
                 {isZipExporting ? "正在打包..." : "下载 ZIP 资源包"}
               </button>
+              <button
+                className="sprite-sheet-button"
+                disabled={isSpriteSheetExporting}
+                onClick={handleSpriteSheetDownload}
+                type="button"
+              >
+                {isSpriteSheetExporting ? "正在合成..." : "下载 Sprite Sheet"}
+              </button>
             </div>
           </div>
           {metadataError && (
@@ -285,6 +320,11 @@ function App() {
           {zipError && (
             <p className="zip-error" role="alert">
               {zipError}
+            </p>
+          )}
+          {spriteSheetError && (
+            <p className="sprite-sheet-error" role="alert">
+              {spriteSheetError}
             </p>
           )}
           <div className="asset-grid">

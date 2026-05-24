@@ -18,6 +18,8 @@ import {
   type GenerateFormState,
   type Theme,
 } from "./types/asset";
+import { type AgentPipelineResult } from "./agent/types/agent";
+import { buildAssetPack } from "./agent/pipeline/buildAssetPack";
 import {
   buildMetadata,
   buildMetadataFileName,
@@ -25,7 +27,6 @@ import {
 } from "./exporters/exportMetadata";
 import { exportSpriteSheet } from "./exporters/exportSpriteSheet";
 import { exportAssetsZip } from "./exporters/exportZip";
-import { generateAssets } from "./features/asset-generator/generateAssets";
 
 const initialFormState: GenerateFormState = {
   theme: "forest",
@@ -39,6 +40,8 @@ function App() {
   const [formState, setFormState] = useState<GenerateFormState>(initialFormState);
   const [submittedState, setSubmittedState] = useState<GenerateFormState | null>(null);
   const [generatedAssets, setGeneratedAssets] = useState<GeneratedAsset[]>([]);
+  const [generationPrompt, setGenerationPrompt] = useState("");
+  const [pipelineResult, setPipelineResult] = useState<AgentPipelineResult | null>(null);
   const [validationMessage, setValidationMessage] = useState("");
   const [metadataError, setMetadataError] = useState("");
   const [zipError, setZipError] = useState("");
@@ -60,11 +63,12 @@ function App() {
     setSpriteSheetError("");
   };
 
-  const handlePlanApplied = (plan: AssetPlan) => {
+  const handlePlanApplied = (plan: AssetPlan, prompt: string) => {
     setFormState({
       ...plan,
       assetTypes: [...plan.assetTypes],
     });
+    setGenerationPrompt(prompt);
     setValidationMessage("");
     setMetadataError("");
     setZipError("");
@@ -78,6 +82,7 @@ function App() {
       setValidationMessage("请至少选择一种素材类型");
       setSubmittedState(null);
       setGeneratedAssets([]);
+      setPipelineResult(null);
       setMetadataError("");
       setZipError("");
       setSpriteSheetError("");
@@ -89,7 +94,9 @@ function App() {
     setZipError("");
     setSpriteSheetError("");
     setSubmittedState(formState);
-    setGeneratedAssets(generateAssets(formState));
+    const result = buildAssetPack(formState, generationPrompt);
+    setGeneratedAssets(result.assets);
+    setPipelineResult(result);
   };
 
   const handleMetadataDownload = () => {
@@ -300,6 +307,9 @@ function App() {
             <div>
               <h2 id="preview-title">素材预览</h2>
               <p>{`共生成 ${generatedAssets.length} 个本地预览素材`}</p>
+              <p className="pipeline-status">
+                {`Agent Pipeline：${pipelineResult?.source ?? "local-agent"} / 已生成 ${generatedAssets.length} 个 variant`}
+              </p>
             </div>
             <div className="preview-actions">
               <button
@@ -341,6 +351,13 @@ function App() {
             <p className="sprite-sheet-error" role="alert">
               {spriteSheetError}
             </p>
+          )}
+          {pipelineResult && pipelineResult.warnings.length > 0 && (
+            <div className="pipeline-warnings" role="status">
+              {pipelineResult.warnings.map((warning) => (
+                <p key={warning}>{warning}</p>
+              ))}
+            </div>
           )}
           <div className="asset-grid">
             {generatedAssets.map((asset) => (

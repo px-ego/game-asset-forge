@@ -1,3 +1,5 @@
+import { type AssetPalette, type RenderHints } from "../agent/types/agent";
+
 export type Theme = "forest" | "dungeon" | "cyberpunk";
 export type AssetStyle = "pixel" | "cartoon";
 export type AssetType = "potion" | "coin" | "slime" | "sword" | "tile";
@@ -29,6 +31,11 @@ export interface GeneratedAsset {
   style: AssetStyle;
   size: AssetSize;
   seed: number;
+  name?: string;
+  description?: string;
+  variant?: string;
+  palette?: AssetPalette;
+  renderHints?: RenderHints;
 }
 
 export interface MetadataAsset {
@@ -40,6 +47,8 @@ export interface MetadataAsset {
   size: AssetSize;
   seed: number;
   fileName: string;
+  variant?: string;
+  description?: string;
 }
 
 export interface ExportMetadata {

@@ -3,7 +3,7 @@ import { planAssetPrompt } from "../api/plannerApi";
 import { type AssetPlan } from "../types/asset";
 
 interface PlannerPanelProps {
-  onPlanApplied(plan: AssetPlan): void;
+  onPlanApplied(plan: AssetPlan, prompt: string): void;
 }
 
 type PlannerStatus = "success" | "error" | null;
@@ -36,7 +36,7 @@ export function PlannerPanel({ onPlanApplied }: PlannerPanelProps) {
         return;
       }
 
-      onPlanApplied(response.plan);
+      onPlanApplied(response.plan, trimmedPrompt);
       setStatus("success");
       setStatusMessage(`规划成功，来源：${response.source}`);
     } catch {

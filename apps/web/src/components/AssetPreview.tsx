@@ -5,21 +5,13 @@ import {
   type GeneratedAsset,
   type Theme,
 } from "../types/asset";
+import { type AssetPalette } from "../agent/types/agent";
 
 interface AssetPreviewProps {
   asset: GeneratedAsset;
 }
 
-interface ThemePalette {
-  background: string;
-  primary: string;
-  secondary: string;
-  accent: string;
-  outline: string;
-  highlight: string;
-}
-
-const palettes: Record<Theme, ThemePalette> = {
+const palettes: Record<Theme, AssetPalette> = {
   forest: {
     background: "#172c24",
     primary: "#63a657",
@@ -47,8 +39,13 @@ const palettes: Record<Theme, ThemePalette> = {
 };
 
 interface IllustrationProps {
-  palette: ThemePalette;
+  palette: AssetPalette;
   style: AssetStyle;
+}
+
+interface DecorationProps {
+  asset: GeneratedAsset;
+  palette: AssetPalette;
 }
 
 function PotionPreview({ palette, style }: IllustrationProps) {
@@ -164,27 +161,264 @@ function TilePreview({ palette, style }: IllustrationProps) {
   );
 }
 
+function GlowDecoration({ asset, palette }: DecorationProps) {
+  if (!asset.renderHints?.glow) {
+    return null;
+  }
+
+  return (
+    <path
+      d="M14 50c0-25 13-36 36-36s36 11 36 36-13 36-36 36-36-11-36-36z"
+      fill="none"
+      opacity="0.5"
+      stroke={palette.accent}
+      strokeDasharray={asset.style === "pixel" ? "7 5" : "3 5"}
+      strokeWidth="3"
+    />
+  );
+}
+
+function CoinDecoration({ asset, palette }: DecorationProps) {
+  switch (asset.renderHints?.decoration) {
+    case "cracks":
+      return (
+        <path
+          d="M48 29 43 44l8 7-8 20M52 51l12-8"
+          fill="none"
+          stroke={palette.outline}
+          strokeWidth="4"
+        />
+      );
+    case "rune":
+      return (
+        <path
+          d="M50 31v38M39 38h18l-16 25h20"
+          fill="none"
+          stroke={palette.highlight}
+          strokeWidth="4"
+        />
+      );
+    case "gem":
+      return (
+        <path
+          d="m50 36 12 12-12 17-12-17z"
+          fill={palette.highlight}
+          stroke={palette.secondary}
+          strokeWidth="3"
+        />
+      );
+    case "curse":
+      return (
+        <path
+          d="M36 52c8-16 26-16 28 0-4 17-24 18-28 0z"
+          fill="#6e3ca3"
+          opacity="0.75"
+        />
+      );
+    case "crown":
+      return <path d="M37 58V42l8 7 6-13 7 13 7-7v16z" fill={palette.highlight} />;
+    case "frost":
+      return <path d="M50 33v34M35 50h30M39 39l22 22m0-22L39 61" stroke="#d9fbff" strokeWidth="3" />;
+    case "ring":
+      return <circle cx="50" cy="50" r="19" fill="none" stroke={palette.highlight} strokeWidth="4" />;
+    default:
+      return null;
+  }
+}
+
+function PotionDecoration({ asset, palette }: DecorationProps) {
+  switch (asset.renderHints?.decoration) {
+    case "cross":
+      return <path d="M47 54h6v7h7v6h-7v8h-6v-8h-7v-6h7z" fill={palette.highlight} />;
+    case "bubbles":
+      return (
+        <>
+          <path d="M30 54h40v18c-7 7-33 7-40 0z" fill="#61db68" opacity="0.9" />
+          <circle cx="43" cy="58" r="4" fill={palette.highlight} />
+          <circle cx="57" cy="66" r="3" fill={palette.highlight} />
+        </>
+      );
+    case "spark":
+      return (
+        <>
+          <path d="M30 54h40v18c-7 7-33 7-40 0z" fill="#586fea" opacity="0.85" />
+          <path d="m51 47-5 11h7l-5 12 14-17h-8l5-6z" fill={palette.highlight} />
+        </>
+      );
+    case "crystal":
+      return (
+        <>
+          <path d="M30 54h40v18c-7 7-33 7-40 0z" fill="#53cfdb" opacity="0.75" />
+          <path d="m50 49 10 12-10 15-10-15z" fill={palette.highlight} />
+        </>
+      );
+    case "flame":
+      return <path d="M51 76c-13-2-12-13-4-22 1 6 7 6 7-6 12 13 10 26-3 28z" fill="#ff783c" />;
+    case "snow":
+      return <path d="M50 53v20M41 63h18M43 56l14 14m0-14L43 70" stroke="#e4fbff" strokeWidth="3" />;
+    case "moon":
+      return <path d="M55 55c-12 3-12 17 0 19-19 4-21-20 0-19z" fill="#b88bdd" />;
+    case "ring":
+      return <ellipse cx="50" cy="64" rx="15" ry="9" fill="none" stroke={palette.highlight} strokeWidth="4" />;
+    default:
+      return null;
+  }
+}
+
+function SlimeDecoration({ asset, palette }: DecorationProps) {
+  switch (asset.renderHints?.decoration) {
+    case "spots":
+      return (
+        <>
+          <circle cx="31" cy="57" r="5" fill="#60da68" />
+          <circle cx="68" cy="65" r="6" fill="#60da68" />
+          <circle cx="52" cy="38" r="4" fill="#c7ff7b" />
+        </>
+      );
+    case "spikes":
+      return (
+        <path
+          d="M32 37 38 20l9 13 8-17 9 20"
+          fill="#72e0ed"
+          stroke={palette.outline}
+          strokeLinejoin="round"
+          strokeWidth="3"
+        />
+      );
+    case "shadow":
+      return (
+        <>
+          <path d="M28 48q22-29 44 0v15H28z" fill="#34264c" opacity="0.9" />
+          <circle cx="40" cy="53" r="3" fill={palette.highlight} />
+          <circle cx="60" cy="53" r="3" fill={palette.highlight} />
+        </>
+      );
+    case "lightning":
+      return <path d="m50 27-10 24h9l-7 22 21-31h-10l8-15z" fill={palette.highlight} />;
+    case "moss":
+      return <path d="M27 42q8-9 15 0 9-13 19 0 7-7 14 1" fill="none" stroke="#395f35" strokeWidth="7" />;
+    case "flame":
+      return <path d="M48 39q-8-12 4-21-1 10 8 12-1 10-12 9z" fill="#ff7d45" />;
+    case "ring":
+      return <path d="M29 61h42M35 69h30" stroke={palette.highlight} strokeWidth="3" />;
+    default:
+      return null;
+  }
+}
+
+function SwordDecoration({ asset, palette }: DecorationProps) {
+  switch (asset.renderHints?.decoration) {
+    case "rune":
+      return <path d="M60 44h10l-10 9h8" fill="none" stroke={palette.accent} strokeWidth="3" />;
+    case "diamond":
+      return <path d="m76 18 7 7-28 38-9-9z" fill="#89e8f4" stroke={palette.highlight} strokeWidth="3" />;
+    case "flame":
+      return <path d="M55 54q9-13 11-23 4 7 9 1 0 13-16 28z" fill="#f46a3c" />;
+    case "neon":
+      return <path d="M52 58 79 20" stroke={palette.accent} strokeLinecap="round" strokeWidth="7" />;
+    case "frost":
+      return <path d="M57 52 75 25m-12 16h10m-4-8h10" stroke="#e3fbff" strokeWidth="3" />;
+    case "shadow":
+      return <path d="M52 60 80 20" stroke="#7c53ac" strokeLinecap="round" strokeWidth="7" opacity="0.8" />;
+    case "crest":
+      return <path d="m42 55 8-7 8 7-8 10z" fill={palette.highlight} />;
+    default:
+      return null;
+  }
+}
+
+function TileDecoration({ asset, palette }: DecorationProps) {
+  const decoration = asset.renderHints?.pattern ?? asset.renderHints?.decoration;
+
+  switch (decoration) {
+    case "cracks":
+      return <path d="M31 25 45 43l-9 14 17 20M45 43l21-11M36 57 25 65" fill="none" stroke={palette.outline} strokeWidth="4" />;
+    case "moss":
+      return <path d="M20 32q12-12 23 0 8-11 19 1M23 74q12-10 24 2" fill="none" stroke="#386c3b" strokeWidth="8" />;
+    case "rune":
+      return <path d="M50 28v44M35 37h27L38 62h29" fill="none" stroke={palette.highlight} strokeWidth="4" />;
+    case "rivets":
+      return (
+        <>
+          <path d="M21 50h59M50 21v59" stroke={palette.outline} strokeWidth="3" />
+          <circle cx="28" cy="28" r="4" fill={palette.highlight} />
+          <circle cx="72" cy="28" r="4" fill={palette.highlight} />
+          <circle cx="28" cy="72" r="4" fill={palette.highlight} />
+          <circle cx="72" cy="72" r="4" fill={palette.highlight} />
+        </>
+      );
+    case "crystal":
+      return <path d="m50 27 16 23-16 23-16-23z" fill="#68dfe9" stroke={palette.highlight} strokeWidth="3" />;
+    case "lava":
+    case "flame":
+      return <path d="M26 67 39 50l-7-13 19 11 15-22 8 31" fill="none" stroke="#ff7140" strokeWidth="6" />;
+    case "circuit":
+    case "neon":
+      return <path d="M27 35h20v15h27M29 67h27V52" fill="none" stroke={palette.highlight} strokeWidth="4" />;
+    default:
+      return null;
+  }
+}
+
+function VariantDecoration({ asset, palette }: DecorationProps) {
+  return (
+    <>
+      <GlowDecoration asset={asset} palette={palette} />
+      {asset.type === "coin" && <CoinDecoration asset={asset} palette={palette} />}
+      {asset.type === "potion" && <PotionDecoration asset={asset} palette={palette} />}
+      {asset.type === "slime" && <SlimeDecoration asset={asset} palette={palette} />}
+      {asset.type === "sword" && <SwordDecoration asset={asset} palette={palette} />}
+      {asset.type === "tile" && <TileDecoration asset={asset} palette={palette} />}
+    </>
+  );
+}
+
 function Illustration({ asset }: AssetPreviewProps) {
-  const palette = palettes[asset.theme];
+  const palette = asset.palette ?? palettes[asset.theme];
   const props = { palette, style: asset.style };
 
   switch (asset.type) {
     case "potion":
-      return <PotionPreview {...props} />;
+      return (
+        <>
+          <PotionPreview {...props} />
+          <VariantDecoration asset={asset} palette={palette} />
+        </>
+      );
     case "coin":
-      return <CoinPreview {...props} />;
+      return (
+        <>
+          <CoinPreview {...props} />
+          <VariantDecoration asset={asset} palette={palette} />
+        </>
+      );
     case "slime":
-      return <SlimePreview {...props} />;
+      return (
+        <>
+          <SlimePreview {...props} />
+          <VariantDecoration asset={asset} palette={palette} />
+        </>
+      );
     case "sword":
-      return <SwordPreview {...props} />;
+      return (
+        <>
+          <SwordPreview {...props} />
+          <VariantDecoration asset={asset} palette={palette} />
+        </>
+      );
     case "tile":
-      return <TilePreview {...props} />;
+      return (
+        <>
+          <TilePreview {...props} />
+          <VariantDecoration asset={asset} palette={palette} />
+        </>
+      );
   }
 }
 
 export const AssetPreview = forwardRef<SVGSVGElement, AssetPreviewProps>(
   function AssetPreview({ asset }, ref) {
-    const palette = palettes[asset.theme];
+    const palette = asset.palette ?? palettes[asset.theme];
     const offset = (asset.seed % 3) - 1;
 
     return (

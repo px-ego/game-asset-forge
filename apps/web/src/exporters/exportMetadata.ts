@@ -27,12 +27,14 @@ export function buildMetadata(
     assets: assets.map((asset) => ({
       id: asset.id,
       type: asset.type,
-      name: assetTypeLabels[asset.type],
+      name: asset.name ?? assetTypeLabels[asset.type],
       theme: asset.theme,
       style: asset.style,
       size: asset.size,
       seed: asset.seed,
       fileName: buildAssetPngFileName(asset),
+      ...(asset.variant ? { variant: asset.variant } : {}),
+      ...(asset.description ? { description: asset.description } : {}),
     })),
   };
 }

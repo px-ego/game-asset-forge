@@ -85,6 +85,11 @@ h1 {
   line-height: 1.6;
 }
 
+.preview-header .pipeline-status {
+  color: #9dda90;
+  font-size: 14px;
+}
+
 .planner-field {
   display: flex;
   flex-direction: column;
@@ -277,6 +282,13 @@ h1 {
   font-size: 19px;
 }
 
+.asset-variant {
+  margin: -7px 0 14px;
+  color: #9dda90;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
 .asset-details {
   display: grid;
   gap: 8px;
@@ -369,6 +381,23 @@ h1 {
   margin: 18px 0 0;
   color: #ffbc73;
   line-height: 1.5;
+}
+
+.pipeline-warnings {
+  margin: 18px 0 0;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 188, 115, 0.32);
+  border-radius: 8px;
+  color: #ffbc73;
+}
+
+.pipeline-warnings p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pipeline-warnings p + p {
+  margin-top: 6px;
 }
 
 @media (max-width: 620px) {

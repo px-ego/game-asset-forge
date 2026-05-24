@@ -52,6 +52,9 @@ export function AssetCard({ asset, onPreviewReady }: AssetCardProps) {
       <div className="asset-card-body">
         <h3>{asset.name ?? assetTypeLabels[asset.type]}</h3>
         {asset.variant && <p className="asset-variant">{asset.variant}</p>}
+        {asset.description && (
+          <p className="asset-description">{asset.description}</p>
+        )}
         <dl className="asset-details">
           <div>
             <dt>类型</dt>

@@ -49,6 +49,7 @@ export interface MetadataAsset {
   fileName: string;
   variant?: string;
   description?: string;
+  renderHints?: RenderHints;
 }
 
 export interface ExportMetadata {

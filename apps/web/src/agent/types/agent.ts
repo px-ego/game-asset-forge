@@ -4,6 +4,7 @@ import {
   type AssetStyle,
   type AssetType,
   type GeneratedAsset,
+  type PlannerSource,
   type Theme,
 } from "../../types/asset";
 
@@ -18,7 +19,7 @@ export interface AssetPalette {
   accent: string;
   outline: string;
   background: string;
-  highlight: string;
+  highlight?: string;
 }
 
 export interface RenderHints {
@@ -56,5 +57,13 @@ export interface AgentPipelineResult {
   plan: AssetPackPlan;
   assets: GeneratedAsset[];
   warnings: string[];
-  source: "local-agent";
+  source: "local-agent" | PlannerSource;
+}
+
+export interface PlanPackResponse {
+  success: boolean;
+  source: PlannerSource;
+  plan: AssetPackPlan | null;
+  message: string;
+  warnings: string[];
 }

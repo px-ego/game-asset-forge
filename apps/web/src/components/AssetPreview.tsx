@@ -11,7 +11,11 @@ interface AssetPreviewProps {
   asset: GeneratedAsset;
 }
 
-const palettes: Record<Theme, AssetPalette> = {
+interface RenderPalette extends AssetPalette {
+  highlight: string;
+}
+
+const palettes: Record<Theme, RenderPalette> = {
   forest: {
     background: "#172c24",
     primary: "#63a657",
@@ -39,13 +43,24 @@ const palettes: Record<Theme, AssetPalette> = {
 };
 
 interface IllustrationProps {
-  palette: AssetPalette;
+  palette: RenderPalette;
   style: AssetStyle;
 }
 
 interface DecorationProps {
   asset: GeneratedAsset;
-  palette: AssetPalette;
+  palette: RenderPalette;
+}
+
+function resolvePalette(asset: GeneratedAsset): RenderPalette {
+  const themePalette = palettes[asset.theme];
+
+  return asset.palette
+    ? {
+        ...asset.palette,
+        highlight: asset.palette.highlight ?? themePalette.highlight,
+      }
+    : themePalette;
 }
 
 function PotionPreview({ palette, style }: IllustrationProps) {
@@ -374,7 +389,7 @@ function VariantDecoration({ asset, palette }: DecorationProps) {
 }
 
 function Illustration({ asset }: AssetPreviewProps) {
-  const palette = asset.palette ?? palettes[asset.theme];
+  const palette = resolvePalette(asset);
   const props = { palette, style: asset.style };
 
   switch (asset.type) {
@@ -418,7 +433,7 @@ function Illustration({ asset }: AssetPreviewProps) {
 
 export const AssetPreview = forwardRef<SVGSVGElement, AssetPreviewProps>(
   function AssetPreview({ asset }, ref) {
-    const palette = asset.palette ?? palettes[asset.theme];
+    const palette = resolvePalette(asset);
     const offset = (asset.seed % 3) - 1;
 
     return (

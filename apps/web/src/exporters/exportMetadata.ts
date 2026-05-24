@@ -35,6 +35,7 @@ export function buildMetadata(
       fileName: buildAssetPngFileName(asset),
       ...(asset.variant ? { variant: asset.variant } : {}),
       ...(asset.description ? { description: asset.description } : {}),
+      ...(asset.renderHints ? { renderHints: { ...asset.renderHints } } : {}),
     })),
   };
 }

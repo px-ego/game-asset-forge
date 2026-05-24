@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { assetTypeLabels, styleLabels, themeLabels } from "../assetOptions";
 import { type GeneratedAsset } from "../types";
 import { exportSvgToPng } from "../utils/exportPng";
@@ -6,12 +6,21 @@ import { AssetPreview } from "./AssetPreview";
 
 interface AssetCardProps {
   asset: GeneratedAsset;
+  onPreviewReady?: (assetId: string, element: SVGSVGElement | null) => void;
 }
 
-export function AssetCard({ asset }: AssetCardProps) {
-  const previewRef = useRef<SVGSVGElement>(null);
+export function AssetCard({ asset, onPreviewReady }: AssetCardProps) {
+  const previewRef = useRef<SVGSVGElement | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState("");
+
+  const handlePreviewRef = useCallback(
+    (element: SVGSVGElement | null) => {
+      previewRef.current = element;
+      onPreviewReady?.(asset.id, element);
+    },
+    [asset.id, onPreviewReady],
+  );
 
   const handleDownload = async () => {
     if (!previewRef.current) {
@@ -35,7 +44,7 @@ export function AssetCard({ asset }: AssetCardProps) {
 
   return (
     <article className="asset-card">
-      <AssetPreview asset={asset} ref={previewRef} />
+      <AssetPreview asset={asset} ref={handlePreviewRef} />
       <div className="asset-card-body">
         <h3>{assetTypeLabels[asset.type]}</h3>
         <dl className="asset-details">

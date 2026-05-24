@@ -2,14 +2,14 @@
 
 ## 文档状态
 
-本文档描述 PR13 百炼 LLM Art Planner V2 接入后的架构。产品需求以 `SPEC.md` v1.0 为准；LLM 仅生成结构化素材包计划，本地 Renderer 与无 Key fallback 仍是稳定主链路。
+本文档描述当前百炼 LLM Art Planner V2 兼容路径与后端 Tool Registry / Skill Registry 架构。产品需求以 `SPEC.md` v1.0 为准；LLM 仅生成结构化素材包计划，本地 Renderer 与无 Key fallback 仍是稳定主链路。
 
 ## 技术结构
 
 | 模块 | 技术 | 当前职责 |
 | --- | --- | --- |
 | `apps/web` | React + TypeScript + Vite | Art Planner 面板、external plan 接入、本地 SVG 预览及全部本地导出 |
-| `apps/api` | Python + FastAPI + Pydantic + OpenAI SDK | 提供健康检查、fallback 与可选百炼 `AssetPackPlan` 规划 |
+| `apps/api` | Python + FastAPI + Pydantic + OpenAI SDK | 提供健康检查、规划接口及应用侧本地 Tool Registry |
 | `packages/renderer` | 预留 | 当前未承载实现，渲染逻辑位于前端 |
 | `packages/schema` | 预留 | 当前未拆分为公共包 |
 | `examples` | 预留 | 当前未提供静态示例资产 |
@@ -116,6 +116,15 @@ flowchart LR
 
 ```text
 apps/api/app/
+  agent/
+    tools/
+      base.py             # ToolDefinition、请求响应与 BaseTool 契约
+      palette_tool.py     # palette.generate
+      variant_tool.py     # variant.generate
+      render_tool.py      # render.prepare，仅准备 render spec
+      validate_tool.py    # asset_pack.validate
+      export_tool.py      # export.describe，仅描述前端导出能力
+      registry.py         # 统一注册、查询与执行
   core/
     config.py             # CORS 与本地 .env 百炼配置
   schemas/
@@ -130,6 +139,7 @@ apps/api/app/
     health.py             # GET /health
     planner.py            # POST /api/plan
     agent.py              # POST /api/agent/plan-pack
+    tools.py              # GET /api/tools、POST /api/tools/execute
   main.py                 # FastAPI 应用装配
 apps/api/test_bailian_min.py # 手动最小 OpenAI-compatible / JSON Mode 联调脚本
 ```
@@ -150,6 +160,20 @@ flowchart LR
 
 旧 `/api/plan` 继续提供简化 `AssetPlan` 契约。新接口始终返回可用于 Renderer 的完整 `AssetPackPlan`：百炼成功时采用模型设计，关闭 LLM、无 Key 或调用/JSON/Schema 校验失败时采用 deterministic fallback。
 
+## 后端 Tool Registry / Skill Registry
+
+`agent/tools/registry.py` 注册五个本地工具，并通过统一 `ToolDefinition` 描述 `name`、`description`、`input_schema`、`output_schema`、`category` 与 `enabled`。`GET /api/tools` 只返回定义；`POST /api/tools/execute` 按名称执行确定性本地逻辑，用于开发调试。
+
+| 工具名 | 当前本地职责 |
+| --- | --- |
+| `palette.generate` | 根据主题、风格与关键词返回色板及风格提示 |
+| `variant.generate` | 复用 fallback 变体规则返回不重复素材 variant |
+| `render.prepare` | 合并 planned asset 与 palette 为 render spec，不生成 SVG |
+| `asset_pack.validate` | 检查 assets、seed、type、variant 与 palette，返回 warning |
+| `export.describe` | 描述 PNG、metadata、ZIP、Sprite Sheet 能力，不执行下载 |
+
+Registry 不是 LangChain、MCP 或真实 Function Calling / Tool Calling。后续可以将 `ToolDefinition` 转换为相应协议的工具 schema；当前前端 Renderer 与 `exporters/` 均未被后端工具替代。
+
 ## 真实联调问题与排查经验
 
 - `core/config.py` 固定从 `apps/api/.env` 加载本地配置；未找到文件时输出 warning 并继续使用进程环境变量。设置 `DEBUG_CONFIG=true` 时只打印启用状态、模型名和 Key 是否存在，不泄漏 Key 内容。
@@ -166,6 +190,7 @@ flowchart LR
 - 后端提供健康检查、fallback planner 与可选百炼 Art Planner，不承担素材绘制、文件存储或鉴权。
 - `POST /api/plan` 仅通过固定规则产出 `AssetPlan`，不调用 LLM 或外部服务。
 - `POST /api/agent/plan-pack` 可调用百炼生成计划，但调用失败会自动 fallback，不返回模型错误堆栈或敏感配置。
+- `GET /api/tools` 与 `POST /api/tools/execute` 仅提供后端本地 Tool Registry 的发现和调试执行，不向 LLM 或第三方服务发送请求。
 - Renderer 与所有导出仍在前端本地执行；百炼不生成图片。
 - 当前没有数据库、登录、云部署或第三方图像生成服务依赖。
 
@@ -173,4 +198,4 @@ flowchart LR
 
 当前已在 `AssetPackPlan` 契约上接入可选百炼 LLM Art Planner，并用 JSON Mode 与 Pydantic 约束结构化计划。
 
-尚未实现真实 Function Calling / Tool Calling、LangChain、MCP、Optional AI Generation 或批量 PNG 单独下载。
+当前 Tool Registry 已固定本地工具 schema 与执行边界；尚未实现由模型驱动的真实 Function Calling / Tool Calling、LangChain、MCP、Optional AI Generation 或批量 PNG 单独下载。

@@ -1,14 +1,23 @@
 import { useState } from "react";
-import { planAssetPrompt } from "../api/plannerApi";
-import { type AssetPlan } from "../types/asset";
+import { planAssetPackPrompt } from "../api/agentPlannerApi";
+import { type AssetPackPlan } from "../agent/types/agent";
+import { type GenerateFormState, type PlannerSource } from "../types/asset";
 
 interface PlannerPanelProps {
-  onPlanApplied(plan: AssetPlan, prompt: string): void;
+  currentFormState: GenerateFormState;
+  onPlanApplied(
+    plan: AssetPackPlan,
+    source: PlannerSource,
+    warnings: string[],
+  ): void;
 }
 
 type PlannerStatus = "success" | "error" | null;
 
-export function PlannerPanel({ onPlanApplied }: PlannerPanelProps) {
+export function PlannerPanel({
+  currentFormState,
+  onPlanApplied,
+}: PlannerPanelProps) {
   const [prompt, setPrompt] = useState("");
   const [isPlanning, setIsPlanning] = useState(false);
   const [status, setStatus] = useState<PlannerStatus>(null);
@@ -28,7 +37,7 @@ export function PlannerPanel({ onPlanApplied }: PlannerPanelProps) {
     setStatusMessage("");
 
     try {
-      const response = await planAssetPrompt(trimmedPrompt);
+      const response = await planAssetPackPrompt(trimmedPrompt, currentFormState);
 
       if (!response.success || !response.plan) {
         setStatus("error");
@@ -36,9 +45,9 @@ export function PlannerPanel({ onPlanApplied }: PlannerPanelProps) {
         return;
       }
 
-      onPlanApplied(response.plan, trimmedPrompt);
+      onPlanApplied(response.plan, response.source, response.warnings);
       setStatus("success");
-      setStatusMessage(`规划成功，来源：${response.source}`);
+      setStatusMessage(`${response.message}，来源：${response.source}`);
     } catch {
       setStatus("error");
       setStatusMessage("AI 规划服务不可用，请手动选择参数");
@@ -52,8 +61,8 @@ export function PlannerPanel({ onPlanApplied }: PlannerPanelProps) {
       <div className="panel-header">
         <h2 id="planner-title">AI 需求规划</h2>
         <p>
-          输入自然语言需求，系统会规划参数；当前使用后端 fallback
-          planner，真实 LLM 留待后续。
+          输入自然语言需求，系统会规划完整素材包；启用百炼时由 LLM 作为 Art
+          Planner，未配置或失败时自动使用 fallback。
         </p>
       </div>
 

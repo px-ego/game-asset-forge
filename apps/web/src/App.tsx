@@ -10,15 +10,15 @@ import { AssetCard } from "./components/AssetCard";
 import { PlannerPanel } from "./components/PlannerPanel";
 import {
   type AssetCount,
-  type AssetPlan,
   type AssetSize,
   type AssetStyle,
   type AssetType,
   type GeneratedAsset,
   type GenerateFormState,
+  type PlannerSource,
   type Theme,
 } from "./types/asset";
-import { type AgentPipelineResult } from "./agent/types/agent";
+import { type AgentPipelineResult, type AssetPackPlan } from "./agent/types/agent";
 import { buildAssetPack } from "./agent/pipeline/buildAssetPack";
 import {
   buildMetadata,
@@ -36,12 +36,42 @@ const initialFormState: GenerateFormState = {
   count: 1,
 };
 
+function getPlanAssetTypes(plan: AssetPackPlan): AssetType[] {
+  return plan.assets.reduce<AssetType[]>((types, asset) => {
+    if (!types.includes(asset.type)) {
+      types.push(asset.type);
+    }
+
+    return types;
+  }, []);
+}
+
+function planMatchesFormState(
+  plan: AssetPackPlan,
+  formState: GenerateFormState,
+): boolean {
+  const planAssetTypes = getPlanAssetTypes(plan);
+
+  return (
+    plan.theme === formState.theme &&
+    plan.style === formState.style &&
+    plan.size === formState.size &&
+    plan.count === formState.count &&
+    planAssetTypes.length === formState.assetTypes.length &&
+    planAssetTypes.every((assetType) => formState.assetTypes.includes(assetType))
+  );
+}
+
 function App() {
   const [formState, setFormState] = useState<GenerateFormState>(initialFormState);
   const [submittedState, setSubmittedState] = useState<GenerateFormState | null>(null);
   const [generatedAssets, setGeneratedAssets] = useState<GeneratedAsset[]>([]);
   const [generationPrompt, setGenerationPrompt] = useState("");
   const [pipelineResult, setPipelineResult] = useState<AgentPipelineResult | null>(null);
+  const [externalPlan, setExternalPlan] = useState<AssetPackPlan | null>(null);
+  const [externalPlanSource, setExternalPlanSource] = useState<PlannerSource | null>(null);
+  const [externalPlanWarnings, setExternalPlanWarnings] = useState<string[]>([]);
+  const [planAdjustmentMessage, setPlanAdjustmentMessage] = useState("");
   const [validationMessage, setValidationMessage] = useState("");
   const [metadataError, setMetadataError] = useState("");
   const [zipError, setZipError] = useState("");
@@ -50,7 +80,20 @@ function App() {
   const [isSpriteSheetExporting, setIsSpriteSheetExporting] = useState(false);
   const previewElementsRef = useRef<Map<string, SVGSVGElement>>(new Map());
 
+  const invalidateExternalPlan = () => {
+    if (!externalPlan) {
+      return;
+    }
+
+    setExternalPlan(null);
+    setExternalPlanSource(null);
+    setExternalPlanWarnings([]);
+    setGenerationPrompt("");
+    setPlanAdjustmentMessage("已修改参数，将使用本地规划重新生成");
+  };
+
   const handleAssetTypeChange = (assetType: AssetType, checked: boolean) => {
+    invalidateExternalPlan();
     setFormState((currentState) => ({
       ...currentState,
       assetTypes: checked
@@ -63,12 +106,23 @@ function App() {
     setSpriteSheetError("");
   };
 
-  const handlePlanApplied = (plan: AssetPlan, prompt: string) => {
+  const handlePlanApplied = (
+    plan: AssetPackPlan,
+    source: PlannerSource,
+    warnings: string[],
+  ) => {
     setFormState({
-      ...plan,
-      assetTypes: [...plan.assetTypes],
+      theme: plan.theme,
+      style: plan.style,
+      size: plan.size,
+      count: plan.count,
+      assetTypes: getPlanAssetTypes(plan),
     });
-    setGenerationPrompt(prompt);
+    setGenerationPrompt(plan.goal);
+    setExternalPlan(plan);
+    setExternalPlanSource(source);
+    setExternalPlanWarnings(warnings);
+    setPlanAdjustmentMessage("");
     setValidationMessage("");
     setMetadataError("");
     setZipError("");
@@ -94,7 +148,16 @@ function App() {
     setZipError("");
     setSpriteSheetError("");
     setSubmittedState(formState);
-    const result = buildAssetPack(formState, generationPrompt);
+    const applicableExternalPlan =
+      externalPlan && planMatchesFormState(externalPlan, formState)
+        ? externalPlan
+        : undefined;
+    const result = buildAssetPack(
+      formState,
+      generationPrompt,
+      applicableExternalPlan,
+      externalPlanSource ?? "fallback",
+    );
     setGeneratedAssets(result.assets);
     setPipelineResult(result);
   };
@@ -177,7 +240,29 @@ function App() {
         </p>
       </section>
 
-      <PlannerPanel onPlanApplied={handlePlanApplied} />
+      <PlannerPanel
+        currentFormState={formState}
+        onPlanApplied={handlePlanApplied}
+      />
+
+      {externalPlan && externalPlanSource && (
+        <section className="plan-summary" aria-labelledby="plan-summary-title">
+          <h2 id="plan-summary-title">素材包设计摘要</h2>
+          <p>{externalPlan.goal}</p>
+          <div className="plan-summary-meta">
+            <span>{`来源：${externalPlanSource}`}</span>
+            <span>{`计划素材：${externalPlan.assets.length} 个`}</span>
+          </div>
+          <p className="plan-hints">
+            {externalPlan.globalStyleHints.join(" / ") || "未提供额外风格提示"}
+          </p>
+          {externalPlanWarnings.map((warning) => (
+            <p className="plan-warning" key={warning}>
+              {warning}
+            </p>
+          ))}
+        </section>
+      )}
 
       <section className="config-panel" aria-labelledby="config-title">
         <div className="panel-header">
@@ -191,12 +276,13 @@ function App() {
               <span>游戏主题</span>
               <select
                 value={formState.theme}
-                onChange={(event) =>
+                onChange={(event) => {
+                  invalidateExternalPlan();
                   setFormState((currentState) => ({
                     ...currentState,
                     theme: event.target.value as Theme,
-                  }))
-                }
+                  }));
+                }}
               >
                 {themeOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -210,12 +296,13 @@ function App() {
               <span>素材风格</span>
               <select
                 value={formState.style}
-                onChange={(event) =>
+                onChange={(event) => {
+                  invalidateExternalPlan();
                   setFormState((currentState) => ({
                     ...currentState,
                     style: event.target.value as AssetStyle,
-                  }))
-                }
+                  }));
+                }}
               >
                 {styleOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -229,12 +316,13 @@ function App() {
               <span>素材尺寸</span>
               <select
                 value={formState.size}
-                onChange={(event) =>
+                onChange={(event) => {
+                  invalidateExternalPlan();
                   setFormState((currentState) => ({
                     ...currentState,
                     size: Number(event.target.value) as AssetSize,
-                  }))
-                }
+                  }));
+                }}
               >
                 {sizeOptions.map((size) => (
                   <option key={size} value={size}>
@@ -248,12 +336,13 @@ function App() {
               <span>生成数量</span>
               <select
                 value={formState.count}
-                onChange={(event) =>
+                onChange={(event) => {
+                  invalidateExternalPlan();
                   setFormState((currentState) => ({
                     ...currentState,
                     count: Number(event.target.value) as AssetCount,
-                  }))
-                }
+                  }));
+                }}
               >
                 {countOptions.map((count) => (
                   <option key={count} value={count}>
@@ -285,6 +374,12 @@ function App() {
           {validationMessage && (
             <p className="validation-message" role="alert">
               {validationMessage}
+            </p>
+          )}
+
+          {planAdjustmentMessage && (
+            <p className="plan-adjustment-message" role="status">
+              {planAdjustmentMessage}
             </p>
           )}
 

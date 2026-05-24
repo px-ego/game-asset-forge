@@ -54,6 +54,7 @@ h1 {
 }
 
 .planner-panel,
+.plan-summary,
 .config-panel,
 .result-panel {
   width: min(100%, 720px);
@@ -72,6 +73,7 @@ h1 {
 }
 
 .panel-header h2,
+.plan-summary h2,
 .result-panel h2,
 .preview-header h2 {
   margin: 0;
@@ -239,6 +241,35 @@ h1 {
   color: #ffbc73;
 }
 
+.plan-summary h2 {
+  margin-bottom: 14px;
+}
+
+.plan-summary p {
+  margin: 10px 0 0;
+  color: #c5cad5;
+  line-height: 1.6;
+}
+
+.plan-summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 18px;
+  color: #9dda90;
+  font-size: 14px;
+}
+
+.plan-summary .plan-hints {
+  color: #e5a443;
+  font-size: 14px;
+}
+
+.plan-summary .plan-warning,
+.plan-adjustment-message {
+  color: #ffbc73;
+}
+
 .result-panel pre {
   overflow-x: auto;
   margin: 20px 0 0;
@@ -287,6 +318,13 @@ h1 {
   color: #9dda90;
   font-size: 12px;
   letter-spacing: 0.02em;
+}
+
+.asset-description {
+  margin: 0 0 14px;
+  color: #b4bbc9;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .asset-details {

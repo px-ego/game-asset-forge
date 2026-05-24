@@ -14,8 +14,10 @@
 | ZIP 资源包导出 | 已满足 | 包含 `assets/` PNG 与 `metadata.json` |
 | Sprite Sheet 导出 | 已满足 | 按卡片顺序合成网格 PNG |
 | Fallback Planner API 与前端面板 | 已满足 | API 填表，不自动生成；手动流程可降级使用 |
-| 本地 Agent Pipeline Skeleton | 已满足 | 页面生成入口走 `local-agent` pipeline，未调用模型 |
+| 本地 Agent Pipeline Skeleton | 已满足 | 手动生成走 `local-agent`；外部计划只作为 Renderer 输入 |
 | 同类型 variant 差异 | 已满足 | 数量为 `4` 时显示不同名称与 SVG 装饰 |
+| 百炼 LLM Art Planner V2 | 已满足 | 配置有效 Key 时返回完整 `AssetPackPlan`；失败自动 fallback |
+| LLM 联调诊断与容错 | 已满足 | 安全配置 debug、路由清单、seed normalize 与分类 fallback message |
 | 不依赖外部 LLM API 演示核心流程 | 已满足 | 素材生成与导出在前端本地执行 |
 | 后续 AI/Agent 路线说明 | 已满足 | 见 `PROMPTING.md` 与 README |
 
@@ -74,7 +76,7 @@ npm.cmd run build
 2. 确认预览区域显示“下载 metadata.json”。
 3. 下载并打开 JSON 文件，确认包含 `project`、`projectName`、`version`、`createdAt`、`request`、`total`、`assets`。
 4. 确认 `total` 与页面卡片数量一致。
-5. 确认每个 asset 包含 `id`、`type`、`name`、`theme`、`style`、`size`、`seed`、`fileName`、`variant`、`description`，且 `fileName` 对应单素材 PNG 命名规则。
+5. 确认每个 asset 包含 `id`、`type`、`name`、`theme`、`style`、`size`、`seed`、`fileName`、`variant`、`description`、`renderHints`，且 `fileName` 对应单素材 PNG 命名规则。
 
 ### 6. ZIP 与 Sprite Sheet 回归
 
@@ -83,12 +85,42 @@ npm.cmd run build
 3. 下载 Sprite Sheet，确认图像按卡片顺序包含 `20` 个格子内容。
 4. 分别使用 `32`、`64`、`128` 尺寸抽查导出仍可完成。
 
-### 7. Planner 与 Pipeline 边界
+### 7. 无 Key Fallback 路径
 
-1. 启动后端，在「AI 需求规划」输入“生成一套地牢像素风素材，包括金币、药水和史莱姆，尺寸64，每种4个”。
-2. 点击“使用 AI 规划参数”，确认 fallback 结果只填充表单，不自动生成。
-3. 点击“生成素材”，确认预览区显示 `Agent Pipeline：local-agent`，同类型素材出现 variant。
-4. 停止后端后再次规划，确认显示服务不可用提示，同时手动生成流程仍正常。
+1. 不设置 `apps/api/.env`，或设置 `LLM_ENABLED=false` 后启动后端。
+2. 请求 `POST /api/agent/plan-pack`，prompt 为“生成一套地牢像素风素材，包括金币、药水和史莱姆，尺寸64，每种4个”。
+3. 确认返回 `success=true`、`source=fallback`，且计划包含 `palette`、`globalStyleHints` 与不同 `variant` 的素材项。
+4. 在前端输入相同 prompt，确认结果只填充表单和设计摘要，不自动生成。
+5. 点击“生成素材”，确认预览区显示 `Agent Pipeline：fallback`，同类型素材出现 variant。
+6. 停止后端后再次规划，确认显示服务不可用提示，同时手动生成流程仍正常。
+
+### 8. 百炼 LLM 路径
+
+1. 仅在本地 `apps/api/.env` 设置 `LLM_ENABLED=true`、有效 `DASHSCOPE_API_KEY`、百炼兼容地址与模型名；确认 `.env` 不进入 Git。
+2. 请求 `/api/agent/plan-pack`，prompt 为“生成一套赛博朋克卡通风武器和药水素材，颜色偏霓虹蓝紫，包括剑、药水和地砖，尺寸128，每种4个”。
+3. 确认返回 `source=llm`、`theme=cyberpunk`、`style=cartoon`、`size=128`、`count=4`。
+4. 确认 assets 包含 `sword`、`potion`、`tile`，同类型具备不同 `name`、`variant`、`description` 与 `renderHints`，且 palette 呈现蓝紫霓虹倾向。
+5. 在前端以同一 prompt 规划并生成，确认素材包摘要显示来源 `llm`，卡片显示计划中的名称和描述。
+
+### 9. 错误 Key 降级路径
+
+1. 在本地设置 `LLM_ENABLED=true` 与无效 Key 后启动后端。
+2. 请求 `/api/agent/plan-pack`，确认接口不返回 500，响应 `source=fallback`。
+3. 确认 message 为“LLM 鉴权失败，已使用 fallback。”，并可继续在页面生成和导出素材。
+
+### 10. 真实联调问题与排查经验：配置与路由诊断
+
+1. 不创建 `apps/api/.env` 启动后端，确认日志提示 `[CONFIG] .env not found, using process environment.`，服务仍能响应健康检查和 fallback 规划。
+2. 在本地 `.env` 设置 `DEBUG_CONFIG=true` 并重新启动，确认日志显示 `LLM_ENABLED`、`DASHSCOPE_MODEL` 与 `KEY EXISTS`，且没有出现真实 Key。
+3. 确认启动日志的 `[ROUTES]` 下包含 `/health`、`/api/plan`、`/api/agent/plan-pack`。
+4. 注意：PowerShell 中未设置父进程变量时，`echo $env:DASHSCOPE_API_KEY` 可以为空，即使 Python 已通过 dotenv 读取 Key；不得以该输出作为加载失败结论。
+
+### 11. JSON Mode、Normalize 与异常分类
+
+1. 在本地配置有效 Key 后手动执行 `.\.venv\Scripts\python.exe test_bailian_min.py`，确认输出为 JSON 内容，以隔离检查 OpenAI-compatible 地址、Key 与 JSON Mode。
+2. 对包含文本 seed（例如 `"sword_cyber_circuit_001"`）的 LLM 响应进行联调或 mock 验证，确认接口返回的 `seed` 为稳定整数，并且同一计划内无重复 seed。
+3. 以超时场景或 mock 触发 `APITimeoutError`，确认 `/api/agent/plan-pack` 返回 `source=fallback` 且 message 为“LLM 请求超时，已使用 fallback。”。
+4. 以非法 schema 响应触发 `ValidationError`，确认 message 为“LLM 输出结构不合法，已使用 fallback。”；失败日志显示异常类型但不显示 Key。
 
 ## 后端健康检查
 
@@ -112,4 +144,4 @@ py -m venv .venv
 
 ## 未实现范围
 
-当前项目未实现真实 LLM、Structured Output、Function Calling / Tool Calling、LangChain、MCP、Stable Diffusion、数据库、用户登录、云部署、多 Agent、Optional AI Generation 或批量 PNG 单独下载。ZIP 资源包与 Sprite Sheet 已实现并纳入上述回归步骤。
+当前项目已支持可选百炼 LLM 输出结构化 `AssetPackPlan`，但未实现 Function Calling / Tool Calling、LangChain、MCP、Stable Diffusion、数据库、用户登录、云部署、多 Agent、Optional AI Generation 或批量 PNG 单独下载。ZIP 资源包与 Sprite Sheet 已实现并纳入上述回归步骤。

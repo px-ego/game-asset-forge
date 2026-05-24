@@ -53,6 +53,7 @@ h1 {
   line-height: 1.7;
 }
 
+.planner-panel,
 .config-panel,
 .result-panel {
   width: min(100%, 720px);
@@ -81,6 +82,28 @@ h1 {
 .preview-header p {
   margin: 10px 0 0;
   color: #9ea7b8;
+  line-height: 1.6;
+}
+
+.planner-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 24px;
+  color: #dde1ea;
+  font-size: 15px;
+}
+
+.planner-field textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 110px;
+  padding: 12px 14px;
+  border: 1px solid #3d4659;
+  border-radius: 10px;
+  color: #f7f4ed;
+  background: #202735;
+  font: inherit;
   line-height: 1.6;
 }
 
@@ -120,6 +143,8 @@ h1 {
 }
 
 .field select:focus,
+.planner-field textarea:focus,
+.planner-button:focus-visible,
 .generate-button:focus-visible,
 .download-button:focus-visible,
 .metadata-button:focus-visible,
@@ -171,6 +196,7 @@ h1 {
   line-height: 1.5;
 }
 
+.planner-button,
 .generate-button {
   width: 100%;
   margin-top: 28px;
@@ -185,8 +211,27 @@ h1 {
   cursor: pointer;
 }
 
+.planner-button:hover:not(:disabled),
 .generate-button:hover {
   background: #f0b85f;
+}
+
+.planner-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.planner-status {
+  margin: 18px 0 0;
+  line-height: 1.5;
+}
+
+.planner-status.success {
+  color: #9dda90;
+}
+
+.planner-status.error {
+  color: #ffbc73;
 }
 
 .result-panel pre {

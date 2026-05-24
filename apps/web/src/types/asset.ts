@@ -3,6 +3,7 @@ export type AssetStyle = "pixel" | "cartoon";
 export type AssetType = "potion" | "coin" | "slime" | "sword" | "tile";
 export type AssetSize = 32 | 64 | 128;
 export type AssetCount = 1 | 4 | 8;
+export type PlannerSource = "fallback" | "llm";
 
 export interface GenerateFormState {
   theme: Theme;
@@ -10,6 +11,15 @@ export interface GenerateFormState {
   assetTypes: AssetType[];
   size: AssetSize;
   count: AssetCount;
+}
+
+export type AssetPlan = GenerateFormState;
+
+export interface PlanResponse {
+  success: boolean;
+  source: PlannerSource;
+  plan: AssetPlan | null;
+  message: string;
 }
 
 export interface GeneratedAsset {

@@ -13,7 +13,8 @@
 | PR7 | ZIP 资源包导出 | 已完成 |
 | PR8 | Sprite Sheet 导出 | 已完成 |
 | PR9 | 前端模块边界重构 | 已完成 |
-| PR10 | 后端 Planner API 与 fallback planner | 本次完成 |
+| PR10 | 后端 Planner API 与 fallback planner | 已完成 |
+| PR11 | 前端 AI 需求规划面板与参数自动填充 | 本次完成 |
 
 ## 当前 MVP 已交付范围
 
@@ -26,6 +27,7 @@
 - 当前结果的 Sprite Sheet 下载。
 - 后端 `GET /health` 健康检查。
 - 后端 `POST /api/plan` fallback 规则规划接口，无需 API Key。
+- 前端 AI 需求规划面板：调用 fallback planner 自动填充表单，生成仍由用户手动触发。
 
 ## 后续增强任务
 

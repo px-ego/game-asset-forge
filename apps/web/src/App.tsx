@@ -7,8 +7,10 @@ import {
   themeOptions,
 } from "./features/asset-generator/assetOptions";
 import { AssetCard } from "./components/AssetCard";
+import { PlannerPanel } from "./components/PlannerPanel";
 import {
   type AssetCount,
+  type AssetPlan,
   type AssetSize,
   type AssetStyle,
   type AssetType,
@@ -52,6 +54,17 @@ function App() {
         ? [...currentState.assetTypes, assetType]
         : currentState.assetTypes.filter((item) => item !== assetType),
     }));
+    setValidationMessage("");
+    setMetadataError("");
+    setZipError("");
+    setSpriteSheetError("");
+  };
+
+  const handlePlanApplied = (plan: AssetPlan) => {
+    setFormState({
+      ...plan,
+      assetTypes: [...plan.assetTypes],
+    });
     setValidationMessage("");
     setMetadataError("");
     setZipError("");
@@ -156,6 +169,8 @@ function App() {
           面向 2D 游戏开发流程的 AI 辅助素材生成工具
         </p>
       </section>
+
+      <PlannerPanel onPlanApplied={handlePlanApplied} />
 
       <section className="config-panel" aria-labelledby="config-title">
         <div className="panel-header">

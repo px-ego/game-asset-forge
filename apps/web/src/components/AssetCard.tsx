@@ -1,0 +1,79 @@
+import { useRef, useState } from "react";
+import { assetTypeLabels, styleLabels, themeLabels } from "../assetOptions";
+import { type GeneratedAsset } from "../types";
+import { exportSvgToPng } from "../utils/exportPng";
+import { AssetPreview } from "./AssetPreview";
+
+interface AssetCardProps {
+  asset: GeneratedAsset;
+}
+
+export function AssetCard({ asset }: AssetCardProps) {
+  const previewRef = useRef<SVGSVGElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
+
+  const handleDownload = async () => {
+    if (!previewRef.current) {
+      setExportError("PNG 导出失败，请重试");
+      return;
+    }
+
+    const fileName = `gameasset_${asset.type}_${asset.theme}_${asset.style}_${asset.size}_${asset.seed}.png`;
+
+    setIsExporting(true);
+    setExportError("");
+
+    try {
+      await exportSvgToPng(previewRef.current, fileName, asset.size);
+    } catch {
+      setExportError("PNG 导出失败，请重试");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return (
+    <article className="asset-card">
+      <AssetPreview asset={asset} ref={previewRef} />
+      <div className="asset-card-body">
+        <h3>{assetTypeLabels[asset.type]}</h3>
+        <dl className="asset-details">
+          <div>
+            <dt>类型</dt>
+            <dd>{asset.type}</dd>
+          </div>
+          <div>
+            <dt>主题</dt>
+            <dd>{`${themeLabels[asset.theme]} (${asset.theme})`}</dd>
+          </div>
+          <div>
+            <dt>风格</dt>
+            <dd>{`${styleLabels[asset.style]} (${asset.style})`}</dd>
+          </div>
+          <div>
+            <dt>尺寸</dt>
+            <dd>{`${asset.size} x ${asset.size}`}</dd>
+          </div>
+          <div>
+            <dt>seed</dt>
+            <dd>{asset.seed}</dd>
+          </div>
+        </dl>
+        <button
+          className="download-button"
+          disabled={isExporting}
+          onClick={handleDownload}
+          type="button"
+        >
+          {isExporting ? "正在导出..." : "下载 PNG"}
+        </button>
+        {exportError && (
+          <p className="export-error" role="alert">
+            {exportError}
+          </p>
+        )}
+      </div>
+    </article>
+  );
+}

@@ -114,6 +114,7 @@ h1 {
 
 .field select:focus,
 .generate-button:focus-visible,
+.download-button:focus-visible,
 .checkbox input:focus-visible {
   outline: 2px solid #e5a443;
   outline-offset: 2px;
@@ -242,6 +243,36 @@ h1 {
 .asset-details dd {
   margin: 0;
   text-align: right;
+}
+
+.download-button {
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px 12px;
+  border: 1px solid #e5a443;
+  border-radius: 8px;
+  color: #e5a443;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.download-button:hover:not(:disabled) {
+  color: #151922;
+  background: #e5a443;
+}
+
+.download-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.export-error {
+  margin: 12px 0 0;
+  color: #ffbc73;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 @media (max-width: 620px) {

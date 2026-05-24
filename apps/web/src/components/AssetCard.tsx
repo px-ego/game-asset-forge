@@ -50,7 +50,8 @@ export function AssetCard({ asset, onPreviewReady }: AssetCardProps) {
     <article className="asset-card">
       <AssetPreview asset={asset} ref={handlePreviewRef} />
       <div className="asset-card-body">
-        <h3>{assetTypeLabels[asset.type]}</h3>
+        <h3>{asset.name ?? assetTypeLabels[asset.type]}</h3>
+        {asset.variant && <p className="asset-variant">{asset.variant}</p>}
         <dl className="asset-details">
           <div>
             <dt>类型</dt>

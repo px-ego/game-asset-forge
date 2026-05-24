@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useCallback, useRef, useState } from "react";
 import {
   assetTypeOptions,
   countOptions,
@@ -21,6 +21,7 @@ import {
   buildMetadataFileName,
   downloadMetadata,
 } from "./utils/exportMetadata";
+import { exportAssetsZip } from "./utils/exportZip";
 import { generateAssets } from "./utils/generateAssets";
 
 const initialFormState: GenerateFormState = {
@@ -37,6 +38,9 @@ function App() {
   const [generatedAssets, setGeneratedAssets] = useState<GeneratedAsset[]>([]);
   const [validationMessage, setValidationMessage] = useState("");
   const [metadataError, setMetadataError] = useState("");
+  const [zipError, setZipError] = useState("");
+  const [isZipExporting, setIsZipExporting] = useState(false);
+  const previewElementsRef = useRef<Map<string, SVGSVGElement>>(new Map());
 
   const handleAssetTypeChange = (assetType: AssetType, checked: boolean) => {
     setFormState((currentState) => ({
@@ -47,6 +51,7 @@ function App() {
     }));
     setValidationMessage("");
     setMetadataError("");
+    setZipError("");
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -57,11 +62,13 @@ function App() {
       setSubmittedState(null);
       setGeneratedAssets([]);
       setMetadataError("");
+      setZipError("");
       return;
     }
 
     setValidationMessage("");
     setMetadataError("");
+    setZipError("");
     setSubmittedState(formState);
     setGeneratedAssets(generateAssets(formState));
   };
@@ -78,6 +85,39 @@ function App() {
       downloadMetadata(metadata, buildMetadataFileName(metadata));
     } catch {
       setMetadataError("metadata.json 导出失败，请重试");
+    }
+  };
+
+  const handlePreviewReady = useCallback(
+    (assetId: string, element: SVGSVGElement | null) => {
+      if (element) {
+        previewElementsRef.current.set(assetId, element);
+        return;
+      }
+
+      previewElementsRef.current.delete(assetId);
+    },
+    [],
+  );
+
+  const handleZipDownload = async () => {
+    if (!submittedState || generatedAssets.length === 0) {
+      return;
+    }
+
+    setIsZipExporting(true);
+    setZipError("");
+
+    try {
+      await exportAssetsZip({
+        formState: submittedState,
+        assets: generatedAssets,
+        svgElements: previewElementsRef.current,
+      });
+    } catch {
+      setZipError("ZIP 导出失败，请重试。");
+    } finally {
+      setIsZipExporting(false);
     }
   };
 
@@ -219,22 +259,41 @@ function App() {
               <h2 id="preview-title">素材预览</h2>
               <p>{`共生成 ${generatedAssets.length} 个本地预览素材`}</p>
             </div>
-            <button
-              className="metadata-button"
-              onClick={handleMetadataDownload}
-              type="button"
-            >
-              下载 metadata.json
-            </button>
+            <div className="preview-actions">
+              <button
+                className="metadata-button"
+                onClick={handleMetadataDownload}
+                type="button"
+              >
+                下载 metadata.json
+              </button>
+              <button
+                className="zip-button"
+                disabled={isZipExporting}
+                onClick={handleZipDownload}
+                type="button"
+              >
+                {isZipExporting ? "正在打包..." : "下载 ZIP 资源包"}
+              </button>
+            </div>
           </div>
           {metadataError && (
             <p className="metadata-error" role="alert">
               {metadataError}
             </p>
           )}
+          {zipError && (
+            <p className="zip-error" role="alert">
+              {zipError}
+            </p>
+          )}
           <div className="asset-grid">
             {generatedAssets.map((asset) => (
-              <AssetCard asset={asset} key={asset.id} />
+              <AssetCard
+                asset={asset}
+                key={asset.id}
+                onPreviewReady={handlePreviewReady}
+              />
             ))}
           </div>
         </section>

@@ -38,6 +38,15 @@ export async function exportSvgToPng(
   fileName: string,
   size: number,
 ): Promise<void> {
+  const pngBlob = await svgElementToPngBlob(svgElement, size);
+
+  downloadBlob(pngBlob, fileName);
+}
+
+export async function svgElementToPngBlob(
+  svgElement: SVGSVGElement,
+  size: number,
+): Promise<Blob> {
   const svgClone = svgElement.cloneNode(true) as SVGSVGElement;
 
   svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
@@ -64,8 +73,7 @@ export async function exportSvgToPng(
       svgElement.getAttribute("shape-rendering") !== "crispEdges";
     context.drawImage(image, 0, 0, size, size);
 
-    const pngBlob = await createPngBlob(canvas);
-    downloadBlob(pngBlob, fileName);
+    return await createPngBlob(canvas);
   } finally {
     URL.revokeObjectURL(sourceUrl);
   }

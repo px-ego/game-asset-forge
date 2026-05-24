@@ -12,7 +12,8 @@
 | PR6 | MVP 使用说明与验收文档收口 | 已完成 |
 | PR7 | ZIP 资源包导出 | 已完成 |
 | PR8 | Sprite Sheet 导出 | 已完成 |
-| PR9 | 前端模块边界重构 | 本次完成 |
+| PR9 | 前端模块边界重构 | 已完成 |
+| PR10 | 后端 Planner API 与 fallback planner | 本次完成 |
 
 ## 当前 MVP 已交付范围
 
@@ -24,11 +25,12 @@
 - 当前结果的 ZIP 资源包下载。
 - 当前结果的 Sprite Sheet 下载。
 - 后端 `GET /health` 健康检查。
+- 后端 `POST /api/plan` fallback 规则规划接口，无需 API Key。
 
 ## 后续增强任务
 
 以下事项不属于当前 MVP 已实现范围：
 
-- LLM Planner：将自然语言需求转换为 `AssetSpec`。
+- 真实 LLM Planner 与 Structured Output：在 fallback 契约基础上扩展自然语言规划能力。
 - LangChain Tool Calling。
 - MCP Server。

@@ -5,7 +5,7 @@ export type AssetStyle = "pixel" | "cartoon";
 export type AssetType = "potion" | "coin" | "slime" | "sword" | "tile";
 export type AssetSize = 32 | 64 | 128;
 export type AssetCount = 1 | 4 | 8;
-export type PlannerSource = "fallback" | "llm";
+export type PlannerSource = "fallback" | "llm" | "function_calling";
 
 export interface GenerateFormState {
   theme: Theme;

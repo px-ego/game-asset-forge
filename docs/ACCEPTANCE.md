@@ -17,6 +17,8 @@
 | 本地 Agent Pipeline Skeleton | 已满足 | 手动生成走 `local-agent`；外部计划只作为 Renderer 输入 |
 | 同类型 variant 差异 | 已满足 | 数量为 `4` 时显示不同名称与 SVG 装饰 |
 | 百炼 LLM Art Planner V2 | 已满足 | 配置有效 Key 时返回完整 `AssetPackPlan`；失败自动 fallback |
+| 后端 Tool Registry | 已满足 | `/api/tools` 返回五个本地工具定义并可调试执行 |
+| 百炼 Function Calling 调度器 | 已满足 | 模型选择工具、后端执行与装配计划；失败自动 fallback |
 | LLM 联调诊断与容错 | 已满足 | 安全配置 debug、路由清单、seed normalize 与分类 fallback message |
 | 不依赖外部 LLM API 演示核心流程 | 已满足 | 素材生成与导出在前端本地执行 |
 | 后续 AI/Agent 路线说明 | 已满足 | 见 `PROMPTING.md` 与 README |
@@ -108,14 +110,24 @@ npm.cmd run build
 2. 请求 `/api/agent/plan-pack`，确认接口不返回 500，响应 `source=fallback`。
 3. 确认 message 为“LLM 鉴权失败，已使用 fallback。”，并可继续在页面生成和导出素材。
 
-### 10. 真实联调问题与排查经验：配置与路由诊断
+### 10. Tool Registry 与 Function Calling
+
+1. 请求 `GET /api/tools`，确认返回五个工具定义：`palette.generate`、`variant.generate`、`render.prepare`、`asset_pack.validate`、`export.describe`。
+2. 调用 `/api/tools/execute` 执行 `palette.generate`，参数为 `theme=cyberpunk`、`style=cartoon`、`prompt=霓虹蓝紫科技感`，确认返回霓虹点缀色板。
+3. 执行 `variant.generate`，参数为 `assetType=coin`、`count=4`、`theme=forest`，确认返回四个不同 variant。
+4. 设置 `LLM_ENABLED=false` 后请求 `/api/agent/function-plan`，确认返回 `source=fallback` 且核心素材计划可用。
+5. 配置有效百炼 Key 后，请求 `/api/agent/function-plan` 生成赛博朋克剑、药水和地砖，确认 `source=function_calling`，`toolCalls` 至少包含 `palette.generate` 与各素材类型的 `variant.generate`。
+6. 在前端进行相同规划，确认设计摘要显示来源与调用工具列表；点击“生成素材”后既有预览及所有导出仍正常。
+7. 设置错误 Key 或模拟工具参数非法/调用不完整，确认 `/api/agent/function-plan` 不返回 500，而是返回 `source=fallback` 与中文降级提示。
+
+### 11. 真实联调问题与排查经验：配置与路由诊断
 
 1. 不创建 `apps/api/.env` 启动后端，确认日志提示 `[CONFIG] .env not found, using process environment.`，服务仍能响应健康检查和 fallback 规划。
 2. 在本地 `.env` 设置 `DEBUG_CONFIG=true` 并重新启动，确认日志显示 `LLM_ENABLED`、`DASHSCOPE_MODEL` 与 `KEY EXISTS`，且没有出现真实 Key。
-3. 确认启动日志的 `[ROUTES]` 下包含 `/health`、`/api/plan`、`/api/agent/plan-pack`。
+3. 确认启动日志的 `[ROUTES]` 下包含 `/health`、`/api/plan`、`/api/agent/plan-pack`、`/api/agent/function-plan` 与 `/api/tools`。
 4. 注意：PowerShell 中未设置父进程变量时，`echo $env:DASHSCOPE_API_KEY` 可以为空，即使 Python 已通过 dotenv 读取 Key；不得以该输出作为加载失败结论。
 
-### 11. JSON Mode、Normalize 与异常分类
+### 12. JSON Mode、Normalize 与异常分类
 
 1. 在本地配置有效 Key 后手动执行 `.\.venv\Scripts\python.exe test_bailian_min.py`，确认输出为 JSON 内容，以隔离检查 OpenAI-compatible 地址、Key 与 JSON Mode。
 2. 对包含文本 seed（例如 `"sword_cyber_circuit_001"`）的 LLM 响应进行联调或 mock 验证，确认接口返回的 `seed` 为稳定整数，并且同一计划内无重复 seed。
@@ -144,4 +156,4 @@ py -m venv .venv
 
 ## 未实现范围
 
-当前项目已支持可选百炼 LLM 输出结构化 `AssetPackPlan`，但未实现 Function Calling / Tool Calling、LangChain、MCP、Stable Diffusion、数据库、用户登录、云部署、多 Agent、Optional AI Generation 或批量 PNG 单独下载。ZIP 资源包与 Sprite Sheet 已实现并纳入上述回归步骤。
+当前项目已支持可选百炼 LLM 输出结构化 `AssetPackPlan` 与百炼 Function Calling 调度后端本地工具，但未实现 LangChain、MCP、Stable Diffusion、数据库、用户登录、云部署、多 Agent、Optional AI Generation 或批量 PNG 单独下载。ZIP 资源包与 Sprite Sheet 已实现并纳入上述回归步骤。

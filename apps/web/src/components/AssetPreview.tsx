@@ -181,12 +181,27 @@ function GlowDecoration({ asset, palette }: DecorationProps) {
     return null;
   }
 
+  const effect = asset.renderHints.effect?.toLowerCase() ?? "";
+  let stroke = palette.accent;
+
+  if (effect.includes("blue") || effect.includes("cyan")) {
+    stroke = "#4eeaff";
+  } else if (effect.includes("purple") || effect.includes("magenta")) {
+    stroke = "#ee69ff";
+  } else if (
+    effect.includes("red") ||
+    effect.includes("orange") ||
+    effect.includes("fire")
+  ) {
+    stroke = "#ff794d";
+  }
+
   return (
     <path
       d="M14 50c0-25 13-36 36-36s36 11 36 36-13 36-36 36-36-11-36-36z"
       fill="none"
       opacity="0.5"
-      stroke={palette.accent}
+      stroke={stroke}
       strokeDasharray={asset.style === "pixel" ? "7 5" : "3 5"}
       strokeWidth="3"
     />

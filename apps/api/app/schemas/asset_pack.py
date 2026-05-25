@@ -27,9 +27,38 @@ class RenderHints(StrictModel):
     material: Optional[str] = None
     decoration: Optional[str] = None
     glow: Optional[bool] = None
+    effect: Optional[str] = None
     emotion: Optional[str] = None
     pattern: Optional[str] = None
     rarity: Optional[Rarity] = None
+
+
+def normalize_render_hints(payload: object) -> object:
+    if not isinstance(payload, dict):
+        return payload
+
+    normalized_payload = dict(payload)
+    glow = normalized_payload.get("glow")
+
+    if isinstance(glow, str):
+        normalized_payload["glow"] = True
+        normalized_payload["effect"] = glow
+
+    return normalized_payload
+
+
+def normalize_planned_asset_render_hints(payload: object) -> object:
+    if not isinstance(payload, dict):
+        return payload
+
+    normalized_payload = dict(payload)
+
+    if "renderHints" in normalized_payload:
+        normalized_payload["renderHints"] = normalize_render_hints(
+            normalized_payload["renderHints"]
+        )
+
+    return normalized_payload
 
 
 class PlannedAsset(StrictModel):

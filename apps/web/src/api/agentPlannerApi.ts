@@ -10,6 +10,7 @@ import {
 import {
   type AssetPackPlan,
   type AssetPalette,
+  type FunctionToolCall,
   type PlanPackResponse,
   type PlannedAsset,
   type RenderHints,
@@ -31,7 +32,7 @@ const assetTypes: readonly AssetType[] = [
 ];
 const sizes: readonly AssetSize[] = [32, 64, 128];
 const counts: readonly AssetCount[] = [1, 4, 8];
-const sources: readonly PlannerSource[] = ["fallback", "llm"];
+const sources: readonly PlannerSource[] = ["fallback", "llm", "function_calling"];
 const rarities = ["common", "rare", "epic"] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -89,6 +90,7 @@ function isRenderHints(value: unknown): value is RenderHints {
     isOptionalString(value.material) &&
     isOptionalString(value.decoration) &&
     (value.glow === undefined || typeof value.glow === "boolean") &&
+    isOptionalString(value.effect) &&
     isOptionalString(value.emotion) &&
     isOptionalString(value.pattern) &&
     (value.rarity === undefined ||
@@ -127,12 +129,29 @@ function isAssetPackPlan(value: unknown): value is AssetPackPlan {
   );
 }
 
+function isFunctionToolCall(value: unknown): value is FunctionToolCall {
+  return (
+    isRecord(value) &&
+    isString(value.toolName) &&
+    (value.rawArguments === undefined || isRecord(value.rawArguments)) &&
+    (value.normalizedArguments === undefined ||
+      isRecord(value.normalizedArguments)) &&
+    isRecord(value.arguments) &&
+    typeof value.success === "boolean" &&
+    (value.warnings === undefined ||
+      (Array.isArray(value.warnings) && value.warnings.every(isString)))
+  );
+}
+
 function isPlanPackResponse(value: unknown): value is PlanPackResponse {
   if (
     !isRecord(value) ||
     typeof value.success !== "boolean" ||
     !isSource(value.source) ||
     !isString(value.message) ||
+    (value.toolCalls !== undefined &&
+      (!Array.isArray(value.toolCalls) ||
+        !value.toolCalls.every(isFunctionToolCall))) ||
     !Array.isArray(value.warnings) ||
     !value.warnings.every(isString)
   ) {
@@ -142,6 +161,33 @@ function isPlanPackResponse(value: unknown): value is PlanPackResponse {
   return value.success
     ? isAssetPackPlan(value.plan)
     : value.plan === null || isAssetPackPlan(value.plan);
+}
+
+async function requestFunctionCallingPlan(
+  prompt: string,
+): Promise<PlanPackResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/agent/function-plan`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ prompt }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Function Calling 规划请求失败");
+  }
+
+  const data: unknown = await response.json();
+
+  if (!isPlanPackResponse(data)) {
+    throw new Error("Function Calling 规划响应格式无效");
+  }
+
+  return {
+    ...data,
+    toolCalls: data.toolCalls ?? [],
+  };
 }
 
 async function requestAssetPackPlan(prompt: string): Promise<PlanPackResponse> {
@@ -163,7 +209,10 @@ async function requestAssetPackPlan(prompt: string): Promise<PlanPackResponse> {
     throw new Error("素材包规划响应格式无效");
   }
 
-  return data;
+  return {
+    ...data,
+    toolCalls: data.toolCalls ?? [],
+  };
 }
 
 async function requestLegacyFallbackPlan(
@@ -190,6 +239,7 @@ async function requestLegacyFallbackPlan(
       createNaturalLanguageGoal(prompt),
     ),
     message: "素材包规划接口不可用，已使用旧 fallback 规划",
+    toolCalls: [],
     warnings: ["当前后端未提供完整 AssetPackPlan 接口。"],
   };
 }
@@ -199,8 +249,12 @@ export async function planAssetPackPrompt(
   currentFormState: GenerateFormState,
 ): Promise<PlanPackResponse> {
   try {
-    return await requestAssetPackPlan(prompt);
+    return await requestFunctionCallingPlan(prompt);
   } catch {
-    return requestLegacyFallbackPlan(prompt, currentFormState);
+    try {
+      return await requestAssetPackPlan(prompt);
+    } catch {
+      return requestLegacyFallbackPlan(prompt, currentFormState);
+    }
   }
 }

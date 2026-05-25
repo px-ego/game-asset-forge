@@ -26,7 +26,9 @@ goal, theme, style, size, count, palette, globalStyleHints, assets。
 - palette 必须包含 primary, secondary, accent, outline, background 五个颜色字符串。
 - globalStyleHints 必须是字符串数组。
 - assets 必须是非空数组；每个元素必须包含 id, type, name, description, variant, seed, renderHints。
-- renderHints 必须是 JSON 对象，可包含 shape, material, decoration, glow, emotion, pattern, rarity。
+- renderHints 必须是 JSON 对象，可包含 shape, material, decoration, glow, effect, emotion, pattern, rarity。
+- renderHints.glow 只能是 JSON boolean：true 或 false，不得填写颜色、闪烁或其他文本。
+- 如果需要描述发光颜色、闪烁、脉冲、网格光效等视觉效果，将描述文本填写到 renderHints.effect，例如 "cyan shimmer"。
 - 对于每个素材类型，生成 count 个 assets；同类型的每个素材必须具有不同 variant、name、description 和可辨识的 renderHints。
 - id 和 seed 应避免重复。
 - decoration / pattern 尽量使用 renderer 可识别的提示：

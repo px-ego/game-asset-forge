@@ -18,7 +18,11 @@ import {
   type PlannerSource,
   type Theme,
 } from "./types/asset";
-import { type AgentPipelineResult, type AssetPackPlan } from "./agent/types/agent";
+import {
+  type AgentPipelineResult,
+  type AssetPackPlan,
+  type FunctionToolCall,
+} from "./agent/types/agent";
 import { buildAssetPack } from "./agent/pipeline/buildAssetPack";
 import {
   buildMetadata,
@@ -71,6 +75,7 @@ function App() {
   const [externalPlan, setExternalPlan] = useState<AssetPackPlan | null>(null);
   const [externalPlanSource, setExternalPlanSource] = useState<PlannerSource | null>(null);
   const [externalPlanWarnings, setExternalPlanWarnings] = useState<string[]>([]);
+  const [externalToolCalls, setExternalToolCalls] = useState<FunctionToolCall[]>([]);
   const [planAdjustmentMessage, setPlanAdjustmentMessage] = useState("");
   const [validationMessage, setValidationMessage] = useState("");
   const [metadataError, setMetadataError] = useState("");
@@ -88,6 +93,7 @@ function App() {
     setExternalPlan(null);
     setExternalPlanSource(null);
     setExternalPlanWarnings([]);
+    setExternalToolCalls([]);
     setGenerationPrompt("");
     setPlanAdjustmentMessage("已修改参数，将使用本地规划重新生成");
   };
@@ -110,6 +116,7 @@ function App() {
     plan: AssetPackPlan,
     source: PlannerSource,
     warnings: string[],
+    toolCalls: FunctionToolCall[],
   ) => {
     setFormState({
       theme: plan.theme,
@@ -122,6 +129,7 @@ function App() {
     setExternalPlan(plan);
     setExternalPlanSource(source);
     setExternalPlanWarnings(warnings);
+    setExternalToolCalls(toolCalls);
     setPlanAdjustmentMessage("");
     setValidationMessage("");
     setMetadataError("");
@@ -256,6 +264,13 @@ function App() {
           <p className="plan-hints">
             {externalPlan.globalStyleHints.join(" / ") || "未提供额外风格提示"}
           </p>
+          {externalToolCalls.length > 0 && (
+            <p className="plan-hints">
+              {`调用工具：${externalToolCalls
+                .map((toolCall) => toolCall.toolName)
+                .join(" / ")}`}
+            </p>
+          )}
           {externalPlanWarnings.map((warning) => (
             <p className="plan-warning" key={warning}>
               {warning}

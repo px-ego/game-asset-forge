@@ -12,7 +12,11 @@ from app.planner.prompt_templates import (
     ASSET_PACK_SYSTEM_PROMPT,
     build_asset_pack_user_prompt,
 )
-from app.schemas.asset_pack import AssetPackPlan, PlanPackRequest
+from app.schemas.asset_pack import (
+    AssetPackPlan,
+    PlanPackRequest,
+    normalize_planned_asset_render_hints,
+)
 
 
 def _stable_integer_seed(value: str) -> int:
@@ -52,7 +56,7 @@ def _normalize_llm_plan(payload: object) -> object:
             normalized_assets.append(asset)
             continue
 
-        normalized_asset = dict(asset)
+        normalized_asset = normalize_planned_asset_render_hints(asset)
 
         if "seed" in normalized_asset:
             seed = _normalize_seed(normalized_asset["seed"])

@@ -16,10 +16,11 @@
 | Fallback Planner API 与前端面板 | 已满足 | API 填表，不自动生成；手动流程可降级使用 |
 | 本地 Agent Pipeline Skeleton | 已满足 | 手动生成走 `local-agent`；外部计划只作为 Renderer 输入 |
 | 同类型 variant 差异 | 已满足 | 数量为 `4` 时显示不同名称与 SVG 装饰 |
-| 百炼 LLM Art Planner V2 | 已满足 | 配置有效 Key 时返回完整 `AssetPackPlan`；失败自动 fallback |
-| LLM 联调诊断与容错 | 已满足 | 安全配置 debug、路由清单、seed normalize 与分类 fallback message |
+| 百炼 LLM Art Director | 已满足 | 配置有效 Key 时生成轻量 `ArtDirectionPlan` 并本地装配完整 `AssetPackPlan`；失败自动 fallback |
+| LLM 联调诊断与容错 | 已满足 | 安全配置 debug、JSON 提取、轻量装配与分类 fallback message |
 | 不依赖外部 LLM API 演示核心流程 | 已满足 | 素材生成与导出在前端本地执行 |
 | 后续 AI/Agent 路线说明 | 已满足 | 见 `PROMPTING.md` 与 README |
+| Agent Trace 调试面板 | 已满足 | 默认折叠；展示规划来源、计划摘要、本地步骤或后端工具调用记录 |
 
 ## 启动前端
 
@@ -115,12 +116,21 @@ npm.cmd run build
 3. 确认启动日志的 `[ROUTES]` 下包含 `/health`、`/api/plan`、`/api/agent/plan-pack`。
 4. 注意：PowerShell 中未设置父进程变量时，`echo $env:DASHSCOPE_API_KEY` 可以为空，即使 Python 已通过 dotenv 读取 Key；不得以该输出作为加载失败结论。
 
-### 11. JSON Mode、Normalize 与异常分类
+### 11. JSON Mode、ArtDirectionPlan 与异常分类
 
 1. 在本地配置有效 Key 后手动执行 `.\.venv\Scripts\python.exe test_bailian_min.py`，确认输出为 JSON 内容，以隔离检查 OpenAI-compatible 地址、Key 与 JSON Mode。
-2. 对包含文本 seed（例如 `"sword_cyber_circuit_001"`）的 LLM 响应进行联调或 mock 验证，确认接口返回的 `seed` 为稳定整数，并且同一计划内无重复 seed。
-3. 以超时场景或 mock 触发 `APITimeoutError`，确认 `/api/agent/plan-pack` 返回 `source=fallback` 且 message 为“LLM 请求超时，已使用 fallback。”。
-4. 以非法 schema 响应触发 `ValidationError`，确认 message 为“LLM 输出结构不合法，已使用 fallback。”；失败日志显示异常类型但不显示 Key。
+2. 对紧凑 `ArtDirectionPlan`、包含 JSON 代码围栏的响应和前后带说明文本的响应进行 mock 验证，确认后端均能装配完整 `AssetPackPlan`，同类型素材仍具有不同 variant。
+3. 对截断 JSON（例如缺失字符串闭合或结尾 `}`）进行 mock 验证，确认 `/api/agent/plan-pack` 返回 `source=fallback` 而不是 500。
+4. 以超时场景或 mock 触发 `APITimeoutError`，确认 `/api/agent/plan-pack` 返回 `source=fallback` 且 message 为“LLM 请求超时，已使用 fallback。”。
+5. 以非法 schema 响应触发 `ValidationError`，确认 message 为“LLM 输出结构不合法，已使用 fallback。”；失败日志显示异常类型但不显示 Key。
+
+### 12. Agent 调用轨迹面板
+
+1. 初次打开页面，确认「Agent 调用轨迹」区域默认折叠；展开后显示“暂无 Agent 调用轨迹”。
+2. 不启动后端，使用参数表单生成素材，展开面板确认 `source=local-agent`，并显示 `PaletteSkill`、`VariantSkill`、`RenderSkill` 与 `Validation` 的参数和摘要。
+3. 启动后端且不配置 API Key，通过 AI 面板规划，确认 trace 显示 `source=fallback`、规划 message、计划摘要及空工具记录说明。
+4. 当后端提供 Function Calling 规划响应时，提交自然语言需求，确认 trace 显示 `source=function_calling` 与返回的 `toolCalls` 参数/结果摘要；工具执行发生在后端，前端仅展示。
+5. 在 trace 展示前后分别下载 PNG、metadata、ZIP 与 Sprite Sheet，确认下载结果与未展示 trace 时一致。
 
 ## 后端健康检查
 
@@ -144,4 +154,4 @@ py -m venv .venv
 
 ## 未实现范围
 
-当前项目已支持可选百炼 LLM 输出结构化 `AssetPackPlan`，但未实现 Function Calling / Tool Calling、LangChain、MCP、Stable Diffusion、数据库、用户登录、云部署、多 Agent、Optional AI Generation 或批量 PNG 单独下载。ZIP 资源包与 Sprite Sheet 已实现并纳入上述回归步骤。
+当前项目已支持可选百炼 LLM 输出轻量 `ArtDirectionPlan` 并由本地 Skill Layer 装配结构化 `AssetPackPlan`，但未实现 Function Calling / Tool Calling、LangChain、MCP、Stable Diffusion、数据库、用户登录、云部署、多 Agent、Optional AI Generation 或批量 PNG 单独下载。ZIP 资源包与 Sprite Sheet 已实现并纳入上述回归步骤。

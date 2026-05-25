@@ -7,6 +7,7 @@ import {
   themeOptions,
 } from "./features/asset-generator/assetOptions";
 import { AssetCard } from "./components/AssetCard";
+import { AgentTracePanel } from "./components/AgentTracePanel";
 import { PlannerPanel } from "./components/PlannerPanel";
 import {
   type AssetCount,
@@ -18,7 +19,11 @@ import {
   type PlannerSource,
   type Theme,
 } from "./types/asset";
-import { type AgentPipelineResult, type AssetPackPlan } from "./agent/types/agent";
+import {
+  type AgentPipelineResult,
+  type AgentTrace,
+  type AssetPackPlan,
+} from "./agent/types/agent";
 import { buildAssetPack } from "./agent/pipeline/buildAssetPack";
 import {
   buildMetadata,
@@ -62,6 +67,51 @@ function planMatchesFormState(
   );
 }
 
+function buildLocalAgentTrace(result: AgentPipelineResult): AgentTrace {
+  const plan = result.plan;
+  const assetTypes = getPlanAssetTypes(plan);
+
+  return {
+    source: "local-agent",
+    message: "使用本地 Agent Pipeline 生成",
+    warnings: result.warnings,
+    plan,
+    toolCalls: [
+      {
+        toolName: "PaletteSkill",
+        arguments: { theme: plan.theme, style: plan.style, goal: plan.goal },
+        success: true,
+        message: "根据主题与风格准备色板。",
+        resultSummary: {
+          palette: plan.palette,
+          globalStyleHints: plan.globalStyleHints,
+        },
+      },
+      {
+        toolName: "VariantSkill",
+        arguments: { assetTypes, count: plan.count },
+        success: true,
+        message: "为素材类型生成可区分的变体。",
+        resultSummary: { plannedAssetCount: plan.assets.length },
+      },
+      {
+        toolName: "RenderSkill",
+        arguments: { size: plan.size, plannedAssetCount: plan.assets.length },
+        success: true,
+        message: "将计划转换为本地 Renderer 输入。",
+        resultSummary: { renderedAssetCount: result.assets.length },
+      },
+      {
+        toolName: "Validation",
+        arguments: { assetCount: result.assets.length },
+        success: true,
+        message: "完成本地计划与渲染结果检查。",
+        resultSummary: { warnings: result.warnings },
+      },
+    ],
+  };
+}
+
 function App() {
   const [formState, setFormState] = useState<GenerateFormState>(initialFormState);
   const [submittedState, setSubmittedState] = useState<GenerateFormState | null>(null);
@@ -71,6 +121,7 @@ function App() {
   const [externalPlan, setExternalPlan] = useState<AssetPackPlan | null>(null);
   const [externalPlanSource, setExternalPlanSource] = useState<PlannerSource | null>(null);
   const [externalPlanWarnings, setExternalPlanWarnings] = useState<string[]>([]);
+  const [agentTrace, setAgentTrace] = useState<AgentTrace | null>(null);
   const [planAdjustmentMessage, setPlanAdjustmentMessage] = useState("");
   const [validationMessage, setValidationMessage] = useState("");
   const [metadataError, setMetadataError] = useState("");
@@ -108,9 +159,10 @@ function App() {
 
   const handlePlanApplied = (
     plan: AssetPackPlan,
-    source: PlannerSource,
-    warnings: string[],
+    trace: AgentTrace,
   ) => {
+    const source = trace.source === "local-agent" ? "fallback" : trace.source;
+
     setFormState({
       theme: plan.theme,
       style: plan.style,
@@ -121,7 +173,8 @@ function App() {
     setGenerationPrompt(plan.goal);
     setExternalPlan(plan);
     setExternalPlanSource(source);
-    setExternalPlanWarnings(warnings);
+    setExternalPlanWarnings(trace.warnings);
+    setAgentTrace(trace);
     setPlanAdjustmentMessage("");
     setValidationMessage("");
     setMetadataError("");
@@ -160,6 +213,10 @@ function App() {
     );
     setGeneratedAssets(result.assets);
     setPipelineResult(result);
+
+    if (!applicableExternalPlan) {
+      setAgentTrace(buildLocalAgentTrace(result));
+    }
   };
 
   const handleMetadataDownload = () => {
@@ -244,6 +301,8 @@ function App() {
         currentFormState={formState}
         onPlanApplied={handlePlanApplied}
       />
+
+      <AgentTracePanel trace={agentTrace} />
 
       {externalPlan && externalPlanSource && (
         <section className="plan-summary" aria-labelledby="plan-summary-title">

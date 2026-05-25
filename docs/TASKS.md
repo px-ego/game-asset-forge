@@ -16,8 +16,9 @@
 | PR10 | 后端 Planner API 与 fallback planner | 已完成 |
 | PR11 | 前端 AI 需求规划面板与参数自动填充 | 已完成 |
 | PR12 | 本地 Agent Pipeline Skeleton 与 variant 渲染适配 | 已完成 |
-| PR13（既有） | 百炼 LLM Art Planner V2 与 `AssetPackPlan` fallback 接入 | 已完成 |
+| PR13（既有） | 百炼 Art Director `ArtDirectionPlan` 与本地 `AssetPackPlan` 装配/fallback | 已完成 |
 | PR13（本次） | 后端 Tool Registry / Skill Registry 与调试接口 | 本次完成 |
+| PR15 | Agent 调用轨迹与前端 Debug 面板 | 本次完成 |
 
 ## 当前 MVP 已交付范围
 
@@ -33,9 +34,10 @@
 - 前端 AI 需求规划面板：优先调用完整 plan-pack 接口，百炼未启用或失败时使用 fallback，生成仍由用户手动触发。
 - 前端本地 Agent Pipeline Skeleton：以 Planner、Palette/Variant/Render/Export Skills 与 Validation 组织生成链路。
 - 同类型 variant 差异展示，且 metadata 保留名称、variant 与描述字段。
-- 后端 `POST /api/agent/plan-pack`：可选百炼 JSON 规划与无 Key/失败 fallback。
+- 后端 `POST /api/agent/plan-pack`：可选百炼 compact `ArtDirectionPlan`，由本地规则装配完整计划，并支持无 Key/失败 fallback。
 - 后端 `GET /api/tools` 与 `POST /api/tools/execute`：注册并本地执行五个应用侧 Skill，用于调试和后续协议适配。
 - 前端保存完整 external `AssetPackPlan` 并在生成时交给现有 pipeline。
+- 前端 Agent Trace 面板：折叠展示 `local-agent`、fallback、LLM 或可兼容的 Function Calling 规划轨迹，不改变生成和导出链路。
 
 ## 后续增强任务
 
@@ -44,3 +46,4 @@
 - 将现有 Tool Registry 接入真实 Function Calling / Tool Calling 与 Optional AI Generation。
 - LangChain Tool Calling。
 - MCP Server。
+- Trace 面板不承担 LangChain / MCP 编排，也不替代后端工具执行。

@@ -176,6 +176,50 @@ function TilePreview({ palette, style }: IllustrationProps) {
   );
 }
 
+function resolveGlowColor(asset: GeneratedAsset, palette: RenderPalette): string {
+  const glowColor = asset.renderHints?.glowColor?.trim();
+
+  if (!glowColor) {
+    return palette.accent;
+  }
+
+  if (/^#[0-9a-f]{3,8}$/i.test(glowColor)) {
+    return glowColor;
+  }
+
+  const normalizedColor = glowColor.toLowerCase().replace(/_/g, " ");
+
+  if (
+    normalizedColor.includes("purple") ||
+    normalizedColor.includes("magenta") ||
+    normalizedColor.includes("violet")
+  ) {
+    return "#d86cff";
+  }
+
+  if (
+    normalizedColor.includes("red") ||
+    normalizedColor.includes("orange") ||
+    normalizedColor.includes("fire")
+  ) {
+    return "#ff7048";
+  }
+
+  if (
+    normalizedColor.includes("yellow") ||
+    normalizedColor.includes("gold") ||
+    normalizedColor.includes("electric")
+  ) {
+    return "#ffe34f";
+  }
+
+  if (normalizedColor.includes("blue") || normalizedColor.includes("cyan")) {
+    return "#38e8ff";
+  }
+
+  return palette.accent;
+}
+
 function GlowDecoration({ asset, palette }: DecorationProps) {
   if (!asset.renderHints?.glow) {
     return null;
@@ -186,7 +230,7 @@ function GlowDecoration({ asset, palette }: DecorationProps) {
       d="M14 50c0-25 13-36 36-36s36 11 36 36-13 36-36 36-36-11-36-36z"
       fill="none"
       opacity="0.5"
-      stroke={palette.accent}
+      stroke={resolveGlowColor(asset, palette)}
       strokeDasharray={asset.style === "pixel" ? "7 5" : "3 5"}
       strokeWidth="3"
     />

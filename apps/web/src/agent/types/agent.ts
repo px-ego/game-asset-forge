@@ -27,6 +27,7 @@ export interface RenderHints {
   material?: string;
   decoration?: string;
   glow?: boolean;
+  glowColor?: string;
   emotion?: string;
   pattern?: string;
   rarity?: "common" | "rare" | "epic";
@@ -60,10 +61,32 @@ export interface AgentPipelineResult {
   source: "local-agent" | PlannerSource;
 }
 
+export interface AgentToolCallTrace {
+  toolName: string;
+  arguments: Record<string, unknown>;
+  rawArguments?: Record<string, unknown>;
+  normalizedArguments?: Record<string, unknown>;
+  success: boolean;
+  result?: unknown;
+  resultSummary?: unknown;
+  message?: string;
+  warnings?: string[];
+  durationMs?: number;
+}
+
+export interface AgentTrace {
+  source: "local-agent" | PlannerSource;
+  message: string;
+  warnings: string[];
+  toolCalls: AgentToolCallTrace[];
+  plan: AssetPackPlan | null;
+}
+
 export interface PlanPackResponse {
   success: boolean;
   source: PlannerSource;
   plan: AssetPackPlan | null;
   message: string;
+  toolCalls: AgentToolCallTrace[];
   warnings: string[];
 }

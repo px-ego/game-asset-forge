@@ -1,13 +1,14 @@
 from collections import Counter
 import json
-from typing import List, Literal, Optional
+from typing import Annotated, List, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.schemas.planner import AssetCount, AssetSize, AssetStyle, AssetType, Theme
 
 
 Rarity = Literal["common", "rare", "epic"]
+DirectionText = Annotated[str, Field(min_length=1, max_length=80)]
 
 
 class StrictModel(BaseModel):
@@ -22,11 +23,43 @@ class AssetPalette(StrictModel):
     background: str = Field(min_length=1)
 
 
+class PaletteIntent(StrictModel):
+    primaryMood: DirectionText
+    accentMood: DirectionText
+    keywords: List[DirectionText] = Field(default_factory=list, max_length=5)
+
+
+class VariantIntent(StrictModel):
+    coin: List[DirectionText] = Field(default_factory=list, max_length=5)
+    potion: List[DirectionText] = Field(default_factory=list, max_length=5)
+    slime: List[DirectionText] = Field(default_factory=list, max_length=5)
+    sword: List[DirectionText] = Field(default_factory=list, max_length=5)
+    tile: List[DirectionText] = Field(default_factory=list, max_length=5)
+
+
+class ArtDirectionPlan(StrictModel):
+    goal: DirectionText
+    theme: Theme
+    style: AssetStyle
+    size: AssetSize
+    count: AssetCount
+    assetTypes: List[AssetType] = Field(min_length=1, max_length=5)
+    paletteIntent: PaletteIntent
+    variantIntent: VariantIntent = Field(default_factory=VariantIntent)
+    globalStyleHints: List[DirectionText] = Field(default_factory=list, max_length=5)
+
+    @field_validator("assetTypes")
+    @classmethod
+    def deduplicate_asset_types(cls, asset_types: List[AssetType]) -> List[AssetType]:
+        return list(dict.fromkeys(asset_types))
+
+
 class RenderHints(StrictModel):
     shape: Optional[str] = None
     material: Optional[str] = None
     decoration: Optional[str] = None
     glow: Optional[bool] = None
+    glowColor: Optional[str] = None
     emotion: Optional[str] = None
     pattern: Optional[str] = None
     rarity: Optional[Rarity] = None

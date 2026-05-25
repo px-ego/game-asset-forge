@@ -54,6 +54,7 @@ h1 {
 }
 
 .planner-panel,
+.agent-trace-panel,
 .plan-summary,
 .config-panel,
 .result-panel {
@@ -73,6 +74,7 @@ h1 {
 }
 
 .panel-header h2,
+.agent-trace-panel h2,
 .plan-summary h2,
 .result-panel h2,
 .preview-header h2 {
@@ -157,6 +159,7 @@ h1 {
 .metadata-button:focus-visible,
 .zip-button:focus-visible,
 .sprite-sheet-button:focus-visible,
+.agent-trace-panel summary:focus-visible,
 .checkbox input:focus-visible {
   outline: 2px solid #e5a443;
   outline-offset: 2px;
@@ -268,6 +271,145 @@ h1 {
 .plan-summary .plan-warning,
 .plan-adjustment-message {
   color: #ffbc73;
+}
+
+.agent-trace-panel {
+  padding: 0;
+}
+
+.agent-trace-panel summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 28px;
+  color: #f7f4ed;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 700;
+  list-style: none;
+}
+
+.agent-trace-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.agent-trace-panel summary::before {
+  content: "+";
+  color: #e5a443;
+  font-size: 24px;
+}
+
+.agent-trace-panel details[open] summary::before {
+  content: "-";
+}
+
+.agent-trace-summary-source {
+  margin-left: auto;
+  color: #9dda90;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.agent-trace-body {
+  display: grid;
+  gap: 18px;
+  padding: 0 28px 28px;
+}
+
+.agent-trace-empty {
+  margin: 0;
+  padding: 0 28px 26px;
+  color: #9ea7b8;
+}
+
+.agent-trace-status,
+.agent-trace-plan,
+.agent-trace-tools,
+.agent-trace-warnings {
+  padding: 16px;
+  border: 1px solid #30394a;
+  border-radius: 12px;
+  background: #202735;
+}
+
+.agent-trace-status p,
+.agent-trace-plan p,
+.agent-trace-tools p,
+.agent-trace-warnings p {
+  margin: 0;
+  color: #c5cad5;
+  line-height: 1.55;
+}
+
+.agent-trace-status p:first-child {
+  margin-bottom: 7px;
+  color: #9dda90;
+}
+
+.agent-trace-panel h3 {
+  margin: 0 0 12px;
+  color: #e5a443;
+  font-size: 16px;
+}
+
+.agent-trace-panel h4 {
+  margin: 12px 0 7px;
+  color: #9ea7b8;
+  font-size: 13px;
+}
+
+.agent-trace-plan pre,
+.agent-trace-call pre {
+  overflow-x: auto;
+  margin: 12px 0 0;
+  padding: 12px;
+  border-radius: 8px;
+  color: #ebedf3;
+  background: #11151d;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.agent-trace-tools ol {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.agent-trace-call {
+  padding: 12px;
+  border-radius: 9px;
+  background: #191e28;
+}
+
+.agent-trace-call-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: #9ea7b8;
+  font-size: 13px;
+}
+
+.agent-trace-call-header strong {
+  color: #f7f4ed;
+  font-size: 15px;
+}
+
+.trace-success {
+  color: #9dda90;
+}
+
+.trace-error,
+.agent-trace-warning,
+.agent-trace-warnings p {
+  color: #ffbc73;
+}
+
+.agent-trace-call > p {
+  margin-top: 8px;
 }
 
 .result-panel pre {

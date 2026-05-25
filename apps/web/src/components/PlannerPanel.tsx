@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { planAssetPackPrompt } from "../api/agentPlannerApi";
-import { type AssetPackPlan } from "../agent/types/agent";
-import { type GenerateFormState, type PlannerSource } from "../types/asset";
+import { type AgentTrace, type AssetPackPlan } from "../agent/types/agent";
+import { type GenerateFormState } from "../types/asset";
 
 interface PlannerPanelProps {
   currentFormState: GenerateFormState;
   onPlanApplied(
     plan: AssetPackPlan,
-    source: PlannerSource,
-    warnings: string[],
+    trace: AgentTrace,
   ): void;
 }
 
@@ -45,7 +44,13 @@ export function PlannerPanel({
         return;
       }
 
-      onPlanApplied(response.plan, response.source, response.warnings);
+      onPlanApplied(response.plan, {
+        source: response.source,
+        message: response.message,
+        warnings: response.warnings,
+        toolCalls: response.toolCalls,
+        plan: response.plan,
+      });
       setStatus("success");
       setStatusMessage(`${response.message}，来源：${response.source}`);
     } catch {
@@ -61,8 +66,8 @@ export function PlannerPanel({
       <div className="panel-header">
         <h2 id="planner-title">AI 需求规划</h2>
         <p>
-          输入自然语言需求，系统会规划完整素材包；启用百炼时由 LLM 作为 Art
-          Planner，未配置或失败时自动使用 fallback。
+        输入自然语言需求，系统会规划完整素材包；可用时展示后端工具轨迹，
+        未配置或失败时自动使用 fallback。
         </p>
       </div>
 

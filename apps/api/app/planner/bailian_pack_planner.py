@@ -1,4 +1,3 @@
-import hashlib
 import json
 
 from openai import OpenAI
@@ -8,66 +7,34 @@ from app.core.config import (
     DASHSCOPE_BASE_URL,
     DASHSCOPE_MODEL,
 )
+from app.planner.fallback_pack_planner import assemble_art_direction_plan
 from app.planner.prompt_templates import (
-    ASSET_PACK_SYSTEM_PROMPT,
-    build_asset_pack_user_prompt,
+    ART_DIRECTION_SYSTEM_PROMPT,
+    build_art_direction_user_prompt,
 )
-from app.schemas.asset_pack import AssetPackPlan, PlanPackRequest
+from app.schemas.asset_pack import ArtDirectionPlan, AssetPackPlan, PlanPackRequest
 
 
-def _stable_integer_seed(value: str) -> int:
-    digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
-    return int(digest[:8], 16) or 1
+def _parse_json_payload(content: str) -> object:
+    candidate = content.strip()
 
+    if candidate.startswith("```"):
+        first_line_end = candidate.find("\n")
+        closing_fence = candidate.rfind("```")
 
-def _normalize_seed(value: object) -> object:
-    if isinstance(value, bool) or isinstance(value, int):
-        return value
+        if first_line_end >= 0 and closing_fence > first_line_end:
+            candidate = candidate[first_line_end + 1 : closing_fence].strip()
 
-    if isinstance(value, str):
-        stripped_value = value.strip()
+    try:
+        return json.loads(candidate)
+    except json.JSONDecodeError as initial_error:
+        object_start = candidate.find("{")
+        object_end = candidate.rfind("}")
 
-        try:
-            return int(stripped_value)
-        except ValueError:
-            return _stable_integer_seed(stripped_value)
+        if object_start >= 0 and object_end > object_start:
+            return json.loads(candidate[object_start : object_end + 1])
 
-    return value
-
-
-def _normalize_llm_plan(payload: object) -> object:
-    if not isinstance(payload, dict):
-        return payload
-
-    assets = payload.get("assets")
-
-    if not isinstance(assets, list):
-        return payload
-
-    normalized_assets: list[object] = []
-    used_seeds: set[int] = set()
-
-    for asset in assets:
-        if not isinstance(asset, dict):
-            normalized_assets.append(asset)
-            continue
-
-        normalized_asset = dict(asset)
-
-        if "seed" in normalized_asset:
-            seed = _normalize_seed(normalized_asset["seed"])
-
-            if isinstance(seed, int) and not isinstance(seed, bool):
-                while seed in used_seeds:
-                    seed += 1
-
-                used_seeds.add(seed)
-
-            normalized_asset["seed"] = seed
-
-        normalized_assets.append(normalized_asset)
-
-    return {**payload, "assets": normalized_assets}
+        raise initial_error
 
 
 def plan_asset_pack_with_bailian(request: PlanPackRequest) -> AssetPackPlan:
@@ -83,11 +50,11 @@ def plan_asset_pack_with_bailian(request: PlanPackRequest) -> AssetPackPlan:
     completion = client.chat.completions.create(
         model=DASHSCOPE_MODEL,
         messages=[
-            {"role": "system", "content": ASSET_PACK_SYSTEM_PROMPT},
-            {"role": "user", "content": build_asset_pack_user_prompt(request)},
+            {"role": "system", "content": ART_DIRECTION_SYSTEM_PROMPT},
+            {"role": "user", "content": build_art_direction_user_prompt(request)},
         ],
         temperature=0.2,
-        max_tokens=1600,
+        max_tokens=700,
         extra_body={"response_format": {"type": "json_object"}},
     )
     content = completion.choices[0].message.content
@@ -95,7 +62,7 @@ def plan_asset_pack_with_bailian(request: PlanPackRequest) -> AssetPackPlan:
     if not content:
         raise ValueError("规划响应为空")
 
-    payload = json.loads(content)
-    normalized_payload = _normalize_llm_plan(payload)
+    payload = _parse_json_payload(content)
+    direction = ArtDirectionPlan.model_validate(payload)
 
-    return AssetPackPlan.model_validate(normalized_payload)
+    return assemble_art_direction_plan(direction, request)

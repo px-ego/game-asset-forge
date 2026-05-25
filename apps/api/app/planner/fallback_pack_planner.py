@@ -2,7 +2,14 @@ import hashlib
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from app.planner.fallback_planner import fallback_parse_prompt
-from app.schemas.asset_pack import AssetPackPlan, AssetPalette, PlannedAsset, RenderHints
+from app.schemas.asset_pack import (
+    ArtDirectionPlan,
+    AssetPackPlan,
+    AssetPalette,
+    PlanPackRequest,
+    PlannedAsset,
+    RenderHints,
+)
 from app.schemas.planner import AssetCount, AssetSize, AssetStyle, AssetType, Theme
 
 
@@ -122,6 +129,48 @@ def _build_palette(theme: Theme, prompt: str) -> tuple[AssetPalette, List[str]]:
     return palette, hints
 
 
+def _prioritize_variant_definitions(
+    asset_type: AssetType,
+    intent_terms: Optional[List[str]],
+) -> Sequence[VariantDefinition]:
+    definitions = VARIANT_DEFINITIONS[asset_type]
+
+    if not intent_terms:
+        return definitions
+
+    normalized_terms = [
+        term.strip().lower().replace("_", " ")
+        for term in intent_terms
+        if term.strip()
+    ]
+
+    def score(definition: VariantDefinition) -> int:
+        variant, name, description, render_hints = definition
+        searchable_text = " ".join(
+            [
+                variant.replace("_", " "),
+                name,
+                description,
+                " ".join(
+                    str(value)
+                    for value in render_hints.model_dump(exclude_none=True).values()
+                ),
+            ]
+        ).lower()
+
+        return sum(
+            1
+            for term in normalized_terms
+            if term in searchable_text
+            or any(part in searchable_text for part in term.split())
+        )
+
+    indexed_definitions = list(enumerate(definitions))
+    indexed_definitions.sort(key=lambda item: (-score(item[1]), item[0]))
+
+    return [definition for _, definition in indexed_definitions]
+
+
 def fallback_pack_plan(
     prompt: str,
     theme: Optional[Theme] = None,
@@ -129,23 +178,34 @@ def fallback_pack_plan(
     size: Optional[AssetSize] = None,
     count: Optional[AssetCount] = None,
     asset_types: Optional[List[AssetType]] = None,
+    palette_context: str = "",
+    additional_style_hints: Optional[List[str]] = None,
+    variant_intent: Optional[Dict[AssetType, List[str]]] = None,
 ) -> AssetPackPlan:
     normalized_prompt = (prompt or "").lower()
+    normalized_palette_context = f"{normalized_prompt} {palette_context.lower()}".strip()
     parsed_plan = fallback_parse_prompt(normalized_prompt)
     resolved_theme = theme or parsed_plan.theme
     resolved_style = style or parsed_plan.style
     resolved_size = size or parsed_plan.size
     resolved_count = count or parsed_plan.count
     resolved_asset_types = asset_types or parsed_plan.assetTypes
-    palette, keyword_hints = _build_palette(resolved_theme, normalized_prompt)
+    palette, keyword_hints = _build_palette(resolved_theme, normalized_palette_context)
     global_style_hints = [
         "硬边像素造型" if resolved_style == "pixel" else "圆润柔和轮廓",
         *keyword_hints,
     ]
+    for hint in additional_style_hints or []:
+        if hint not in global_style_hints:
+            global_style_hints.append(hint)
+
     assets: List[PlannedAsset] = []
 
     for asset_type in resolved_asset_types:
-        definitions = VARIANT_DEFINITIONS[asset_type][:resolved_count]
+        definitions = _prioritize_variant_definitions(
+            asset_type,
+            (variant_intent or {}).get(asset_type),
+        )[:resolved_count]
 
         for index, (variant, name, description, render_hints) in enumerate(definitions):
             assets.append(
@@ -171,4 +231,33 @@ def fallback_pack_plan(
         palette=palette,
         globalStyleHints=global_style_hints,
         assets=assets,
+    )
+
+
+def assemble_art_direction_plan(
+    direction: ArtDirectionPlan,
+    request: PlanPackRequest,
+) -> AssetPackPlan:
+    variant_intent = {
+        asset_type: getattr(direction.variantIntent, asset_type)
+        for asset_type in direction.assetTypes
+    }
+    palette_context = " ".join(
+        [
+            direction.paletteIntent.primaryMood,
+            direction.paletteIntent.accentMood,
+            *direction.paletteIntent.keywords,
+        ]
+    )
+
+    return fallback_pack_plan(
+        prompt=request.prompt.strip() or direction.goal,
+        theme=request.theme or direction.theme,
+        style=request.style or direction.style,
+        size=request.size or direction.size,
+        count=request.count or direction.count,
+        asset_types=request.assetTypes or direction.assetTypes,
+        palette_context=palette_context,
+        additional_style_hints=direction.globalStyleHints,
+        variant_intent=variant_intent,
     )
